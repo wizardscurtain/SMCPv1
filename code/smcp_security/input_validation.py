@@ -94,6 +94,11 @@ class CommandInjectionPrevention:
         Raises:
             SecurityError: If dangerous patterns are detected
         """
+        # Skip validation for structured data (dict/list) at top level
+        # Only validate string values within the structure
+        if isinstance(input_data, (dict, list)):
+            return self._validate_structured_data(input_data, context)
+        
         input_str = str(input_data)
         
         # Check for dangerous patterns
@@ -110,6 +115,42 @@ class CommandInjectionPrevention:
                 raise SecurityError(f"Context validation failed for {context}")
         
         return True
+    
+    def _validate_structured_data(self, data: Any, context: str = None) -> bool:
+        """Validate structured data (dict/list) recursively"""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, str):
+                    # Only validate string values, not JSON structure
+                    self._validate_string_value(value, context)
+                elif isinstance(value, (dict, list)):
+                    self._validate_structured_data(value, context)
+        elif isinstance(data, list):
+            for item in data:
+                if isinstance(item, str):
+                    self._validate_string_value(item, context)
+                elif isinstance(item, (dict, list)):
+                    self._validate_structured_data(item, context)
+        
+        return True
+    
+    def _validate_string_value(self, value: str, context: str = None):
+        """Validate individual string values"""
+        # Check for dangerous patterns in string values only
+        for rule in self.dangerous_patterns:
+            if rule.name == "shell_metacharacters":
+                # More targeted shell metacharacter detection
+                # Allow JSON-safe characters but block dangerous shell chars
+                dangerous_shell_pattern = r'[;&|`$]|(\{[^}]*\}.*[;&|`$])|(\[[^\]]*\].*[;&|`$])'
+                if re.search(dangerous_shell_pattern, value, re.IGNORECASE):
+                    raise SecurityError(
+                        f"Dangerous pattern detected: {rule.name} - {rule.description}"
+                    )
+            else:
+                if re.search(rule.pattern, value, re.IGNORECASE):
+                    raise SecurityError(
+                        f"Dangerous pattern detected: {rule.name} - {rule.description}"
+                    )
     
     def _validate_file_operations(self, data: Any) -> bool:
         """Validate file system operations"""
