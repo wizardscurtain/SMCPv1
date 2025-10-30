@@ -5220,7 +5220,933 @@ class SecurityTestSuite:
             )
 ```
 
+## Chapter 12: Input Validation Implementation
+
+### 12.1 Advanced Validation Engine
+
+The input validation layer implements sophisticated validation techniques including schema validation, semantic analysis, and machine learning-based anomaly detection.
+
+#### 12.1.1 Multi-Stage Validation Pipeline
+
+```python
+class AdvancedInputValidator:
+    """Multi-stage input validation with ML-enhanced detection."""
+    
+    def __init__(self, config: ValidationConfig):
+        self.config = config
+        self.validation_stages = [
+            SyntaxValidationStage(config.syntax_config),
+            SchemaValidationStage(config.schema_config),
+            SemanticValidationStage(config.semantic_config),
+            SecurityValidationStage(config.security_config),
+            MLAnomalyValidationStage(config.ml_config)
+        ]
+        
+        self.validation_cache = ValidationCache(config.cache_config)
+        self.metrics_collector = ValidationMetricsCollector()
+    
+    async def validate_input(self, input_data: Any, 
+                           context: ValidationContext) -> ValidationResult:
+        """Comprehensive input validation through all stages."""
+        
+        # Check cache first
+        cache_key = self._compute_cache_key(input_data, context)
+        cached_result = await self.validation_cache.get(cache_key)
+        if cached_result:
+            return cached_result
+        
+        validation_results = []
+        overall_score = 1.0
+        
+        for stage in self.validation_stages:
+            stage_result = await stage.validate(input_data, context)
+            validation_results.append(stage_result)
+            
+            # Update overall score
+            overall_score *= stage_result.confidence_score
+            
+            # Early termination on critical failures
+            if stage_result.severity == ValidationSeverity.CRITICAL:
+                break
+        
+        # Compute final result
+        final_result = ValidationResult(
+            is_valid=all(r.is_valid for r in validation_results),
+            confidence_score=overall_score,
+            stage_results=validation_results,
+            validation_time=sum(r.processing_time for r in validation_results),
+            recommendations=self._generate_recommendations(validation_results)
+        )
+        
+        # Cache result
+        await self.validation_cache.set(cache_key, final_result)
+        
+        # Record metrics
+        await self.metrics_collector.record_validation(final_result, context)
+        
+        return final_result
+
+class SchemaValidationStage:
+    """JSON Schema validation with custom extensions."""
+    
+    def __init__(self, config: SchemaConfig):
+        self.config = config
+        self.schema_registry = SchemaRegistry()
+        self.custom_validators = self._load_custom_validators()
+    
+    async def validate(self, data: Any, context: ValidationContext) -> StageResult:
+        """Validate data against appropriate schema."""
+        
+        # Determine schema based on message type
+        schema_name = self._determine_schema(context.message_type)
+        schema = await self.schema_registry.get_schema(schema_name)
+        
+        if not schema:
+            return StageResult(
+                stage_name="schema_validation",
+                is_valid=False,
+                severity=ValidationSeverity.HIGH,
+                message=f"No schema found for {schema_name}"
+            )
+        
+        try:
+            # Standard JSON Schema validation
+            jsonschema.validate(data, schema)
+            
+            # Custom validation rules
+            custom_result = await self._apply_custom_validators(data, schema, context)
+            
+            return StageResult(
+                stage_name="schema_validation",
+                is_valid=custom_result.is_valid,
+                confidence_score=custom_result.confidence,
+                severity=custom_result.severity,
+                details=custom_result.details
+            )
+            
+        except jsonschema.ValidationError as e:
+            return StageResult(
+                stage_name="schema_validation",
+                is_valid=False,
+                severity=ValidationSeverity.HIGH,
+                message=f"Schema validation failed: {e.message}",
+                details={'path': list(e.absolute_path), 'value': e.instance}
+            )
+    
+    def _load_custom_validators(self) -> Dict[str, CustomValidator]:
+        """Load custom validation rules."""
+        return {
+            'smcp_tool_call': SMCPToolCallValidator(),
+            'smcp_resource_request': SMCPResourceValidator(),
+            'smcp_prompt_request': SMCPPromptValidator(),
+            'smcp_auth_token': SMCPAuthTokenValidator()
+        }
+
+class SMCPToolCallValidator(CustomValidator):
+    """Custom validator for SMCP tool call requests."""
+    
+    async def validate(self, data: Dict, schema: Dict, 
+                      context: ValidationContext) -> CustomValidationResult:
+        """Validate SMCP tool call structure and content."""
+        
+        issues = []
+        confidence = 1.0
+        
+        # Validate tool name
+        tool_name = data.get('tool_name')
+        if not tool_name:
+            issues.append("Missing tool_name field")
+            confidence *= 0.5
+        elif not self._is_valid_tool_name(tool_name):
+            issues.append(f"Invalid tool name format: {tool_name}")
+            confidence *= 0.7
+        
+        # Validate arguments
+        arguments = data.get('arguments', {})
+        if not isinstance(arguments, dict):
+            issues.append("Arguments must be a dictionary")
+            confidence *= 0.3
+        else:
+            # Validate argument types and constraints
+            arg_validation = await self._validate_tool_arguments(
+                tool_name, arguments, context
+            )
+            issues.extend(arg_validation.issues)
+            confidence *= arg_validation.confidence
+        
+        # Check for suspicious patterns
+        suspicious_patterns = await self._detect_suspicious_patterns(data, context)
+        if suspicious_patterns:
+            issues.extend(suspicious_patterns)
+            confidence *= 0.8
+        
+        return CustomValidationResult(
+            is_valid=len(issues) == 0,
+            confidence=confidence,
+            severity=ValidationSeverity.MEDIUM if issues else ValidationSeverity.LOW,
+            details={'issues': issues}
+        )
+    
+    async def _validate_tool_arguments(self, tool_name: str, arguments: Dict,
+                                     context: ValidationContext) -> ArgumentValidationResult:
+        """Validate tool-specific arguments."""
+        
+        # Get tool schema
+        tool_schema = await self._get_tool_schema(tool_name)
+        if not tool_schema:
+            return ArgumentValidationResult(
+                issues=[f"Unknown tool: {tool_name}"],
+                confidence=0.5
+            )
+        
+        issues = []
+        confidence = 1.0
+        
+        # Validate required arguments
+        required_args = tool_schema.get('required', [])
+        for arg in required_args:
+            if arg not in arguments:
+                issues.append(f"Missing required argument: {arg}")
+                confidence *= 0.6
+        
+        # Validate argument types and constraints
+        properties = tool_schema.get('properties', {})
+        for arg_name, arg_value in arguments.items():
+            if arg_name in properties:
+                prop_schema = properties[arg_name]
+                
+                # Type validation
+                expected_type = prop_schema.get('type')
+                if not self._validate_type(arg_value, expected_type):
+                    issues.append(f"Invalid type for {arg_name}: expected {expected_type}")
+                    confidence *= 0.7
+                
+                # Constraint validation
+                constraint_result = await self._validate_constraints(
+                    arg_name, arg_value, prop_schema
+                )
+                issues.extend(constraint_result.issues)
+                confidence *= constraint_result.confidence
+        
+        return ArgumentValidationResult(issues=issues, confidence=confidence)
+```
+
+### 12.2 Prompt Injection Detection
+
+#### 12.2.1 Advanced Prompt Injection Defense
+
+```python
+class PromptInjectionDetector:
+    """Advanced prompt injection detection using multiple techniques."""
+    
+    def __init__(self, config: PromptInjectionConfig):
+        self.config = config
+        self.pattern_detector = PatternBasedDetector(config.pattern_config)
+        self.ml_detector = MLPromptInjectionDetector(config.ml_config)
+        self.semantic_analyzer = SemanticAnalyzer(config.semantic_config)
+        
+    async def detect_injection(self, prompt: str, 
+                              context: ValidationContext) -> InjectionDetectionResult:
+        """Comprehensive prompt injection detection."""
+        
+        detection_results = []
+        
+        # Pattern-based detection
+        pattern_result = await self.pattern_detector.analyze(prompt, context)
+        detection_results.append(pattern_result)
+        
+        # ML-based detection
+        ml_result = await self.ml_detector.analyze(prompt, context)
+        detection_results.append(ml_result)
+        
+        # Semantic analysis
+        semantic_result = await self.semantic_analyzer.analyze(prompt, context)
+        detection_results.append(semantic_result)
+        
+        # Combine results
+        combined_score = self._combine_detection_scores(detection_results)
+        
+        return InjectionDetectionResult(
+            is_injection=combined_score > self.config.threshold,
+            confidence_score=combined_score,
+            detection_methods=detection_results,
+            risk_level=self._compute_risk_level(combined_score),
+            mitigation_suggestions=self._generate_mitigations(detection_results)
+        )
+
+class PatternBasedDetector:
+    """Pattern-based prompt injection detection."""
+    
+    def __init__(self, config: PatternConfig):
+        self.config = config
+        self.injection_patterns = self._load_injection_patterns()
+        self.evasion_patterns = self._load_evasion_patterns()
+    
+    def _load_injection_patterns(self) -> List[InjectionPattern]:
+        """Load known prompt injection patterns."""
+        return [
+            # Direct instruction injection
+            InjectionPattern(
+                name="direct_instruction",
+                pattern=r"(?i)(ignore|forget|disregard).*(previous|above|earlier).*(instruction|prompt|rule)",
+                severity=InjectionSeverity.HIGH,
+                confidence=0.9
+            ),
+            
+            # Role manipulation
+            InjectionPattern(
+                name="role_manipulation",
+                pattern=r"(?i)(you are now|act as|pretend to be|roleplay as).*(admin|root|system|developer)",
+                severity=InjectionSeverity.HIGH,
+                confidence=0.85
+            ),
+            
+            # System prompt extraction
+            InjectionPattern(
+                name="system_extraction",
+                pattern=r"(?i)(show|reveal|display|print).*(system prompt|initial instruction|configuration)",
+                severity=InjectionSeverity.MEDIUM,
+                confidence=0.8
+            ),
+            
+            # Delimiter confusion
+            InjectionPattern(
+                name="delimiter_confusion",
+                pattern=r"[\"'`]{3,}|<\|.*?\|>|\[INST\]|\[/INST\]",
+                severity=InjectionSeverity.MEDIUM,
+                confidence=0.7
+            ),
+            
+            # Encoding evasion
+            InjectionPattern(
+                name="encoding_evasion",
+                pattern=r"(?i)(base64|hex|rot13|unicode|ascii).*(decode|convert|translate)",
+                severity=InjectionSeverity.MEDIUM,
+                confidence=0.75
+            )
+        ]
+    
+    async def analyze(self, prompt: str, context: ValidationContext) -> PatternDetectionResult:
+        """Analyze prompt for injection patterns."""
+        
+        detected_patterns = []
+        max_severity = InjectionSeverity.LOW
+        combined_confidence = 0.0
+        
+        for pattern in self.injection_patterns:
+            matches = re.finditer(pattern.pattern, prompt)
+            
+            for match in matches:
+                detected_patterns.append(PatternMatch(
+                    pattern=pattern,
+                    match_text=match.group(),
+                    start_pos=match.start(),
+                    end_pos=match.end(),
+                    context_window=prompt[max(0, match.start()-50):match.end()+50]
+                ))
+                
+                max_severity = max(max_severity, pattern.severity)
+                combined_confidence = max(combined_confidence, pattern.confidence)
+        
+        return PatternDetectionResult(
+            detected_patterns=detected_patterns,
+            severity=max_severity,
+            confidence=combined_confidence,
+            analysis_details={
+                'total_patterns_checked': len(self.injection_patterns),
+                'matches_found': len(detected_patterns),
+                'prompt_length': len(prompt)
+            }
+        )
+
+class MLPromptInjectionDetector:
+    """Machine learning-based prompt injection detection."""
+    
+    def __init__(self, config: MLDetectionConfig):
+        self.config = config
+        self.model = self._load_model()
+        self.tokenizer = self._load_tokenizer()
+        self.feature_extractor = PromptFeatureExtractor()
+    
+    def _load_model(self) -> tf.keras.Model:
+        """Load pre-trained injection detection model."""
+        model_path = self.config.model_path
+        
+        if os.path.exists(model_path):
+            return tf.keras.models.load_model(model_path)
+        else:
+            # Build and train model if not exists
+            return self._build_and_train_model()
+    
+    def _build_and_train_model(self) -> tf.keras.Model:
+        """Build and train injection detection model."""
+        
+        # Model architecture
+        model = tf.keras.Sequential([
+            tf.keras.layers.Embedding(
+                input_dim=self.config.vocab_size,
+                output_dim=128,
+                input_length=self.config.max_sequence_length
+            ),
+            tf.keras.layers.LSTM(64, return_sequences=True),
+            tf.keras.layers.LSTM(32),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dropout(0.5),
+            tf.keras.layers.Dense(32, activation='relu'),
+            tf.keras.layers.Dense(1, activation='sigmoid')
+        ])
+        
+        model.compile(
+            optimizer='adam',
+            loss='binary_crossentropy',
+            metrics=['accuracy', 'precision', 'recall']
+        )
+        
+        # Train model with synthetic and real data
+        training_data = self._generate_training_data()
+        model.fit(
+            training_data['X'], training_data['y'],
+            epochs=50,
+            batch_size=32,
+            validation_split=0.2,
+            verbose=0
+        )
+        
+        # Save model
+        model.save(self.config.model_path)
+        
+        return model
+    
+    async def analyze(self, prompt: str, context: ValidationContext) -> MLDetectionResult:
+        """Analyze prompt using ML model."""
+        
+        # Extract features
+        features = await self.feature_extractor.extract(prompt, context)
+        
+        # Tokenize and pad
+        tokens = self.tokenizer.texts_to_sequences([prompt])
+        padded_tokens = tf.keras.preprocessing.sequence.pad_sequences(
+            tokens, maxlen=self.config.max_sequence_length
+        )
+        
+        # Predict
+        prediction = self.model.predict(padded_tokens)[0][0]
+        
+        return MLDetectionResult(
+            injection_probability=float(prediction),
+            confidence=self._compute_confidence(prediction, features),
+            feature_importance=self._compute_feature_importance(features),
+            model_version=self.config.model_version
+        )
+```
+
+## Chapter 13: Authentication Implementation
+
+### 13.1 Multi-Factor Authentication System
+
+#### 13.1.1 Comprehensive MFA Implementation
+
+```python
+class MultiFactorAuthenticator:
+    """Comprehensive multi-factor authentication system."""
+    
+    def __init__(self, config: MFAConfig):
+        self.config = config
+        self.factor_providers = self._initialize_factor_providers()
+        self.session_manager = MFASessionManager(config.session_config)
+        self.risk_analyzer = AuthenticationRiskAnalyzer(config.risk_config)
+        
+    def _initialize_factor_providers(self) -> Dict[str, FactorProvider]:
+        """Initialize all authentication factor providers."""
+        return {
+            'password': PasswordFactorProvider(self.config.password_config),
+            'totp': TOTPFactorProvider(self.config.totp_config),
+            'sms': SMSFactorProvider(self.config.sms_config),
+            'email': EmailFactorProvider(self.config.email_config),
+            'biometric': BiometricFactorProvider(self.config.biometric_config),
+            'hardware_token': HardwareTokenProvider(self.config.hardware_config),
+            'push_notification': PushNotificationProvider(self.config.push_config)
+        }
+    
+    async def initiate_authentication(self, user_id: str, 
+                                    context: AuthContext) -> AuthenticationChallenge:
+        """Initiate multi-factor authentication process."""
+        
+        # Analyze authentication risk
+        risk_assessment = await self.risk_analyzer.assess_risk(user_id, context)
+        
+        # Determine required factors based on risk
+        required_factors = await self._determine_required_factors(
+            user_id, risk_assessment
+        )
+        
+        # Create MFA session
+        mfa_session = await self.session_manager.create_session(
+            user_id=user_id,
+            required_factors=required_factors,
+            risk_level=risk_assessment.risk_level,
+            context=context
+        )
+        
+        # Generate challenges for each required factor
+        challenges = []
+        for factor_type in required_factors:
+            provider = self.factor_providers[factor_type]
+            challenge = await provider.generate_challenge(user_id, context)
+            challenges.append(challenge)
+        
+        return AuthenticationChallenge(
+            session_id=mfa_session.session_id,
+            required_factors=required_factors,
+            challenges=challenges,
+            expires_at=mfa_session.expires_at,
+            risk_level=risk_assessment.risk_level
+        )
+    
+    async def verify_factor(self, session_id: str, factor_type: str,
+                           response: str, context: AuthContext) -> FactorVerificationResult:
+        """Verify a single authentication factor."""
+        
+        # Get MFA session
+        mfa_session = await self.session_manager.get_session(session_id)
+        if not mfa_session or mfa_session.is_expired():
+            return FactorVerificationResult(
+                success=False,
+                error="Invalid or expired session"
+            )
+        
+        # Verify factor
+        provider = self.factor_providers[factor_type]
+        verification_result = await provider.verify_response(
+            mfa_session.user_id, response, context
+        )
+        
+        # Update session
+        await self.session_manager.update_factor_status(
+            session_id, factor_type, verification_result.success
+        )
+        
+        # Check if all factors are satisfied
+        if verification_result.success:
+            session_status = await self.session_manager.check_completion(session_id)
+            
+            if session_status.is_complete:
+                # Generate final authentication token
+                auth_token = await self._generate_authentication_token(
+                    mfa_session.user_id, mfa_session, context
+                )
+                
+                return FactorVerificationResult(
+                    success=True,
+                    authentication_complete=True,
+                    auth_token=auth_token
+                )
+        
+        return verification_result
+
+class TOTPFactorProvider(FactorProvider):
+    """Time-based One-Time Password factor provider."""
+    
+    def __init__(self, config: TOTPConfig):
+        self.config = config
+        self.secret_manager = TOTPSecretManager(config.secret_config)
+        
+    async def generate_challenge(self, user_id: str, 
+                               context: AuthContext) -> FactorChallenge:
+        """Generate TOTP challenge."""
+        
+        # Check if user has TOTP configured
+        totp_secret = await self.secret_manager.get_user_secret(user_id)
+        if not totp_secret:
+            return FactorChallenge(
+                factor_type='totp',
+                challenge_type='setup_required',
+                setup_data=await self._generate_setup_data(user_id)
+            )
+        
+        return FactorChallenge(
+            factor_type='totp',
+            challenge_type='code_required',
+            message="Enter the 6-digit code from your authenticator app",
+            expires_in=30  # TOTP window
+        )
+    
+    async def verify_response(self, user_id: str, response: str,
+                            context: AuthContext) -> FactorVerificationResult:
+        """Verify TOTP code."""
+        
+        # Get user's TOTP secret
+        totp_secret = await self.secret_manager.get_user_secret(user_id)
+        if not totp_secret:
+            return FactorVerificationResult(
+                success=False,
+                error="TOTP not configured for user"
+            )
+        
+        # Validate code format
+        if not re.match(r'^\d{6}$', response):
+            return FactorVerificationResult(
+                success=False,
+                error="Invalid code format"
+            )
+        
+        # Verify TOTP code with time window tolerance
+        totp = pyotp.TOTP(totp_secret)
+        
+        # Check current time window and adjacent windows
+        current_time = int(time.time())
+        for time_offset in [-30, 0, 30]:  # Allow ±30 second window
+            if totp.verify(response, for_time=current_time + time_offset):
+                
+                # Check for replay attacks
+                if await self._is_code_recently_used(user_id, response, current_time):
+                    return FactorVerificationResult(
+                        success=False,
+                        error="Code already used"
+                    )
+                
+                # Record successful verification
+                await self._record_successful_verification(user_id, response, current_time)
+                
+                return FactorVerificationResult(success=True)
+        
+        # Record failed attempt
+        await self._record_failed_attempt(user_id, response, context)
+        
+        return FactorVerificationResult(
+            success=False,
+            error="Invalid or expired code"
+        )
+    
+    async def _generate_setup_data(self, user_id: str) -> Dict[str, Any]:
+        """Generate TOTP setup data for new user."""
+        
+        # Generate new secret
+        secret = pyotp.random_base32()
+        
+        # Store secret (encrypted)
+        await self.secret_manager.store_user_secret(user_id, secret)
+        
+        # Generate QR code data
+        totp = pyotp.TOTP(secret)
+        provisioning_uri = totp.provisioning_uri(
+            name=user_id,
+            issuer_name=self.config.issuer_name
+        )
+        
+        return {
+            'secret': secret,
+            'qr_code_uri': provisioning_uri,
+            'manual_entry_key': secret,
+            'issuer': self.config.issuer_name
+        }
+
+class BiometricFactorProvider(FactorProvider):
+    """Biometric authentication factor provider."""
+    
+    def __init__(self, config: BiometricConfig):
+        self.config = config
+        self.biometric_engine = BiometricEngine(config.engine_config)
+        self.template_store = BiometricTemplateStore(config.storage_config)
+        
+    async def generate_challenge(self, user_id: str,
+                               context: AuthContext) -> FactorChallenge:
+        """Generate biometric challenge."""
+        
+        # Check available biometric modalities for user
+        available_modalities = await self.template_store.get_user_modalities(user_id)
+        
+        if not available_modalities:
+            return FactorChallenge(
+                factor_type='biometric',
+                challenge_type='enrollment_required',
+                message="Biometric enrollment required"
+            )
+        
+        # Select best modality based on context and device capabilities
+        selected_modality = await self._select_optimal_modality(
+            available_modalities, context
+        )
+        
+        return FactorChallenge(
+            factor_type='biometric',
+            challenge_type='biometric_capture',
+            modality=selected_modality,
+            capture_requirements=self._get_capture_requirements(selected_modality),
+            expires_in=60
+        )
+    
+    async def verify_response(self, user_id: str, response: str,
+                            context: AuthContext) -> FactorVerificationResult:
+        """Verify biometric sample."""
+        
+        try:
+            # Parse biometric data
+            biometric_data = self._parse_biometric_response(response)
+            
+            # Get stored template
+            stored_template = await self.template_store.get_template(
+                user_id, biometric_data.modality
+            )
+            
+            if not stored_template:
+                return FactorVerificationResult(
+                    success=False,
+                    error="No biometric template found"
+                )
+            
+            # Perform matching
+            match_result = await self.biometric_engine.match(
+                biometric_data.sample,
+                stored_template,
+                biometric_data.modality
+            )
+            
+            # Check match score against threshold
+            if match_result.score >= self.config.match_threshold:
+                
+                # Additional liveness detection for high-risk scenarios
+                if context.risk_level >= RiskLevel.HIGH:
+                    liveness_result = await self.biometric_engine.check_liveness(
+                        biometric_data.sample, biometric_data.modality
+                    )
+                    
+                    if not liveness_result.is_live:
+                        return FactorVerificationResult(
+                            success=False,
+                            error="Liveness check failed"
+                        )
+                
+                return FactorVerificationResult(
+                    success=True,
+                    match_score=match_result.score,
+                    modality=biometric_data.modality
+                )
+            else:
+                return FactorVerificationResult(
+                    success=False,
+                    error="Biometric match failed",
+                    match_score=match_result.score
+                )
+                
+        except Exception as e:
+            return FactorVerificationResult(
+                success=False,
+                error=f"Biometric verification error: {e}"
+            )
+```
+
+### 13.2 JWT Token Management
+
+#### 13.2.1 Advanced JWT Implementation
+
+```python
+class JWTTokenManager:
+    """Advanced JWT token management with security enhancements."""
+    
+    def __init__(self, config: JWTConfig):
+        self.config = config
+        self.key_manager = JWTKeyManager(config.key_config)
+        self.token_store = TokenStore(config.storage_config)
+        self.revocation_list = TokenRevocationList(config.revocation_config)
+        
+    async def generate_token(self, user_id: str, claims: Dict[str, Any],
+                           context: AuthContext) -> JWTToken:
+        """Generate JWT token with enhanced security features."""
+        
+        # Get current signing key
+        signing_key = await self.key_manager.get_current_signing_key()
+        
+        # Generate unique token ID
+        token_id = str(uuid.uuid4())
+        
+        # Prepare claims
+        now = datetime.utcnow()
+        token_claims = {
+            # Standard claims
+            'iss': self.config.issuer,
+            'sub': user_id,
+            'aud': self.config.audience,
+            'iat': int(now.timestamp()),
+            'exp': int((now + timedelta(seconds=self.config.expiry_seconds)).timestamp()),
+            'nbf': int(now.timestamp()),
+            'jti': token_id,
+            
+            # Custom claims
+            **claims,
+            
+            # Security claims
+            'auth_time': int(context.auth_time.timestamp()) if context.auth_time else int(now.timestamp()),
+            'amr': context.auth_methods,  # Authentication methods reference
+            'acr': context.auth_context_class,  # Authentication context class
+            'azp': context.authorized_party if context.authorized_party else self.config.audience,
+            
+            # Risk-based claims
+            'risk_level': context.risk_level.value,
+            'device_id': context.device_id,
+            'ip_address': context.ip_address,
+            'geo_location': context.geo_location
+        }
+        
+        # Add refresh token capability if configured
+        if self.config.enable_refresh_tokens:
+            refresh_token_id = str(uuid.uuid4())
+            token_claims['refresh_token_id'] = refresh_token_id
+        
+        # Sign token
+        token = jwt.encode(
+            token_claims,
+            signing_key.private_key,
+            algorithm=signing_key.algorithm,
+            headers={
+                'kid': signing_key.key_id,
+                'typ': 'JWT',
+                'alg': signing_key.algorithm
+            }
+        )
+        
+        # Store token metadata
+        await self.token_store.store_token_metadata(
+            token_id=token_id,
+            user_id=user_id,
+            issued_at=now,
+            expires_at=now + timedelta(seconds=self.config.expiry_seconds),
+            claims=token_claims,
+            context=context
+        )
+        
+        # Generate refresh token if enabled
+        refresh_token = None
+        if self.config.enable_refresh_tokens:
+            refresh_token = await self._generate_refresh_token(
+                refresh_token_id, user_id, token_id, context
+            )
+        
+        return JWTToken(
+            access_token=token,
+            token_type='Bearer',
+            expires_in=self.config.expiry_seconds,
+            refresh_token=refresh_token,
+            scope=claims.get('scope', 'default')
+        )
+    
+    async def validate_token(self, token: str, 
+                           context: ValidationContext) -> TokenValidationResult:
+        """Comprehensive token validation."""
+        
+        try:
+            # Decode header to get key ID
+            unverified_header = jwt.get_unverified_header(token)
+            key_id = unverified_header.get('kid')
+            
+            if not key_id:
+                return TokenValidationResult(
+                    is_valid=False,
+                    error="Missing key ID in token header"
+                )
+            
+            # Get verification key
+            verification_key = await self.key_manager.get_verification_key(key_id)
+            if not verification_key:
+                return TokenValidationResult(
+                    is_valid=False,
+                    error="Unknown key ID"
+                )
+            
+            # Verify and decode token
+            decoded_claims = jwt.decode(
+                token,
+                verification_key.public_key,
+                algorithms=[verification_key.algorithm],
+                audience=self.config.audience,
+                issuer=self.config.issuer,
+                options={
+                    'verify_signature': True,
+                    'verify_exp': True,
+                    'verify_nbf': True,
+                    'verify_iat': True,
+                    'verify_aud': True,
+                    'verify_iss': True
+                }
+            )
+            
+            # Check token revocation
+            token_id = decoded_claims.get('jti')
+            if await self.revocation_list.is_revoked(token_id):
+                return TokenValidationResult(
+                    is_valid=False,
+                    error="Token has been revoked"
+                )
+            
+            # Additional security validations
+            security_validation = await self._perform_security_validations(
+                decoded_claims, context
+            )
+            
+            if not security_validation.is_valid:
+                return security_validation
+            
+            return TokenValidationResult(
+                is_valid=True,
+                claims=decoded_claims,
+                user_id=decoded_claims['sub'],
+                expires_at=datetime.fromtimestamp(decoded_claims['exp'])
+            )
+            
+        except jwt.ExpiredSignatureError:
+            return TokenValidationResult(
+                is_valid=False,
+                error="Token has expired"
+            )
+        except jwt.InvalidTokenError as e:
+            return TokenValidationResult(
+                is_valid=False,
+                error=f"Invalid token: {e}"
+            )
+    
+    async def _perform_security_validations(self, claims: Dict[str, Any],
+                                          context: ValidationContext) -> TokenValidationResult:
+        """Perform additional security validations."""
+        
+        # Device binding validation
+        if self.config.enable_device_binding:
+            token_device_id = claims.get('device_id')
+            current_device_id = context.device_id
+            
+            if token_device_id and current_device_id and token_device_id != current_device_id:
+                return TokenValidationResult(
+                    is_valid=False,
+                    error="Token device binding mismatch"
+                )
+        
+        # IP address validation for high-risk tokens
+        risk_level = RiskLevel(claims.get('risk_level', 'low'))
+        if risk_level >= RiskLevel.HIGH and self.config.enable_ip_binding:
+            token_ip = claims.get('ip_address')
+            current_ip = context.ip_address
+            
+            if token_ip and current_ip and not self._is_ip_match(token_ip, current_ip):
+                return TokenValidationResult(
+                    is_valid=False,
+                    error="Token IP binding mismatch"
+                )
+        
+        # Time-based validations
+        auth_time = claims.get('auth_time')
+        if auth_time:
+            auth_age = datetime.utcnow().timestamp() - auth_time
+            max_auth_age = self.config.max_auth_age_seconds
+            
+            if auth_age > max_auth_age:
+                return TokenValidationResult(
+                    is_valid=False,
+                    error="Authentication too old"
+                )
+        
+        return TokenValidationResult(is_valid=True)
+```
+
 ---
 
-This completes Chapter 11 with comprehensive implementation details. The document now has approximately 150 pages. Let me continue with the remaining chapters to reach the 200+ page target.
+This continues the comprehensive technical documentation with detailed implementation chapters. The document now has approximately 175 pages. Let me add the final sections to reach 200+ pages.
 
