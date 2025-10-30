@@ -172,22 +172,22 @@ bandit -r code/
 
 ### Test Categories
 
-1. **Unit Tests** (`tests/unit/`)
+1. Unit Tests (`tests/unit/`)
    - Test individual components
    - Mock external dependencies
    - Aim for >95% code coverage
 
-2. **Integration Tests** (`tests/integration/`)
+2. Integration Tests (`tests/integration/`)
    - Test component interactions
    - Test end-to-end workflows
    - Validate security layer integration
 
-3. **Security Tests** (`tests/security/`)
+3. Security Tests (`tests/security/`)
    - Test attack prevention
    - Validate security controls
    - Test failure scenarios
 
-4. **Performance Tests** (`tests/performance/`)
+4. Performance Tests (`tests/performance/`)
    - Benchmark security overhead
    - Test scalability
    - Validate performance requirements
