@@ -229,15 +229,16 @@ class PromptInjectionDetector:
         # For demo purposes, we'll use pattern matching
         self.use_ml_detection = False
         
-        try:
-            # Uncomment for production use with proper model
-            # self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-            # self.model = AutoModel.from_pretrained('bert-base-uncased')
-            # self.use_ml_detection = True
-            pass
-        except Exception:
-            # Fall back to pattern-based detection
-            self.use_ml_detection = False
+        if ML_AVAILABLE:
+            try:
+                # Uncomment for production use with proper model
+                # self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+                # self.model = AutoModel.from_pretrained('bert-base-uncased')
+                # self.use_ml_detection = True
+                pass
+            except Exception:
+                # Fall back to pattern-based detection
+                self.use_ml_detection = False
     
     def detect_injection(self, text: str) -> Dict[str, Any]:
         """Detect prompt injection attempts
