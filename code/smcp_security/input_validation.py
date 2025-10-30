@@ -10,8 +10,14 @@ import html
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 import jsonschema
-from transformers import AutoTokenizer, AutoModel
-import torch
+
+# Optional ML imports
+try:
+    from transformers import AutoTokenizer, AutoModel
+    import torch
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
 
 from .exceptions import ValidationError, SecurityError
 
