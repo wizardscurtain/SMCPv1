@@ -9,7 +9,7 @@ __version__ = "1.0.0"
 __author__ = "Secure AI Systems Laboratory"
 __email__ = "security@smcp.org"
 
-from .core import SMCPSecurityFramework
+from .core import SMCPSecurityFramework, SecurityConfig
 from .input_validation import InputValidator, CommandInjectionPrevention
 from .authentication import JWTAuthenticator, MFAManager
 from .authorization import RBACManager
