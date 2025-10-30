@@ -186,7 +186,7 @@ class SMCPSecurityFramework:
             
             # Layer 3: Rate Limiting
             if self.config.enable_rate_limiting:
-                await self._check_rate_limits(auth_context)
+                await self._check_rate_limits(auth_context, validated_request)
             
             # Layer 4: Cryptographic Processing
             if self.config.enable_encryption:
