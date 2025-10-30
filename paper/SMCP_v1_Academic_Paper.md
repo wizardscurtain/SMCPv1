@@ -88,7 +88,7 @@ Recent work on AI-based security systems has focused on adversarial robustness a
 
 ### 2.5 Gap Analysis
 
-While existing research provides valuable insights into individual security components, no comprehensive framework addresses the specific security requirements of MCP-based AI agent interactions. Current approaches suffer from several limitations:
+While existing research provides valuable insights into individual security components, no framework addresses the specific security requirements of MCP-based AI agent interactions. Current approaches suffer from several limitations:
 
 1. **Protocol-Agnostic Design**: Existing security frameworks are designed for general-purpose protocols and do not address MCP-specific vulnerabilities
 2. **Limited Integration**: Individual security components are not integrated into cohesive defense systems
