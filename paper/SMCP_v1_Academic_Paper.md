@@ -66,7 +66,7 @@ The remainder of this paper is organized as follows: Section 2 reviews related w
 
 The security of AI agents and their interactions with external systems has become an increasingly critical research area. Early work by Zhang et al. [5] identified fundamental vulnerabilities in AI agent architectures, particularly focusing on prompt injection and model manipulation attacks. Subsequent research by Kumar et al. [6] extended this analysis to multi-agent systems, demonstrating how compromised agents can propagate attacks across distributed AI infrastructures.
 
-Recent work by Chen et al. [7] specifically addressed security challenges in AI tool usage, proposing sandboxing mechanisms and permission systems. However, these approaches focus primarily on individual tool isolation rather than comprehensive protocol-level security. Our work extends this research by providing a complete security framework specifically designed for MCP-based interactions.
+Recent work by Chen et al. [7] addressed security challenges in AI tool usage, proposing sandboxing mechanisms and permission systems. However, these approaches focus primarily on individual tool isolation rather than protocol-level security. Our work extends this research by providing a security framework designed for MCP-based interactions.
 
 ### 2.2 Protocol Security Frameworks
 
