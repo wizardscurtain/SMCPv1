@@ -349,7 +349,7 @@ async def demo_normal_requests():
                     print(f"     Security Level: {metadata.get('security_level')}")
                     print(f"     Processing Time: {metadata.get('processing_time_ms'):.2f}ms")
         except Exception as e:
-            print(f"  ❌ Exception: {str(e)}")
+            print(f"  Exception: {str(e)}")
         
         print()
 
