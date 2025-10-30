@@ -7,7 +7,7 @@ command injection, prompt manipulation, authentication bypass, and more.
 
 __version__ = "1.0.0"
 __author__ = "Secure AI Systems Laboratory"
-__email__ = "security@smcp.org"
+__email__ = "contact@example.org"
 
 from .core import SMCPSecurityFramework, SecurityConfig
 from .input_validation import InputValidator, CommandInjectionPrevention
