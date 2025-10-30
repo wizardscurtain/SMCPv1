@@ -77,27 +77,27 @@ We take security seriously and appreciate responsible disclosure of vulnerabilit
 
 ### Reporting Process
 
-1. **Initial Report**
+1. Initial Report
    - Email: security@example.org
    - Subject: "SMCP v1 Security Vulnerability Report"
    - Include: Detailed description, reproduction steps, impact assessment
 
-2. **Acknowledgment**
+2. Acknowledgment
    - We will acknowledge receipt within 48 hours
    - Initial assessment provided within 5 business days
    - Regular updates on remediation progress
 
-3. **Investigation**
+3. Investigation
    - Security team validates and reproduces the issue
    - Impact and severity assessment conducted
    - Remediation plan developed
 
-4. **Resolution**
+4. Resolution
    - Security patch developed and tested
    - Coordinated disclosure timeline established
    - Public advisory prepared
 
-5. **Disclosure**
+5. Disclosure
    - Security advisory published
    - CVE assigned if applicable
    - Credit given to reporter (if desired)
