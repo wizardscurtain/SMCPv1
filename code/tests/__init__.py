@@ -38,4 +38,4 @@ Usage:
 
 __version__ = "1.0.0"
 __author__ = "SMCP Security Team"
-__email__ = "security@smcp-project.org"
+__email__ = "contact@example.org"
