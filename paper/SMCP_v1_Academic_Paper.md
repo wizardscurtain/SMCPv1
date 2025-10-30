@@ -1174,7 +1174,7 @@ The evaluation results demonstrate that SMCP v1 provides comprehensive protectio
 
 4. **Scalability**: The framework maintains consistent performance characteristics across different load levels.
 
-5. **Cryptographic Security**: The use of ChaCha20-Poly1305 and Argon2 provides state-of-the-art cryptographic protection.
+5. **Cryptographic Security**: The use of ChaCha20-Poly1305 and Argon2 provides cryptographic protection.
 
 #### 7.1.2 Limitations
 
