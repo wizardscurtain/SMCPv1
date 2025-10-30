@@ -13,7 +13,7 @@ This document provides a detailed overview of the Secure Model Context Protocol 
 
 ## Overview
 
-SMCP v1 implements a comprehensive defense-in-depth security architecture designed specifically for Model Context Protocol (MCP) environments. The framework provides six integrated security layers that work together to protect against various attack vectors while maintaining acceptable performance characteristics.
+SMCP v1 implements a defense-in-depth security architecture designed for Model Context Protocol (MCP) environments. The framework provides six integrated security layers that work together to protect against various attack vectors while maintaining acceptable performance characteristics.
 
 ### Design Principles
 
