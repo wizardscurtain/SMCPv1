@@ -471,10 +471,10 @@ async def main():
         
         print("\n=== Demo Complete ===")
         print("The SMCP Security Framework successfully:")
-        print("  ✅ Processed legitimate requests")
-        print("  🛡️  Blocked malicious requests")
-        print("  📊 Provided comprehensive monitoring")
-        print("  🔒 Maintained security throughout")
+        print("  - Processed legitimate requests")
+        print("  - Blocked malicious requests")
+        print("  - Provided monitoring capabilities")
+        print("  - Maintained security throughout")
         
     except Exception as e:
         print(f"Demo error: {str(e)}")
