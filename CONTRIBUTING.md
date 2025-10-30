@@ -92,13 +92,13 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
    pytest tests/performance/
    ```
 
-4. **Commit Changes**
+4. Commit Changes
    ```bash
    git add .
    git commit -m "feat: add new security layer validation"
    ```
 
-5. **Push and Create PR**
+5. Push and Create PR
    ```bash
    git push origin feature/your-feature-name
    ```
