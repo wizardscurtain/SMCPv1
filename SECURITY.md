@@ -15,32 +15,32 @@ We actively support the following versions of SMCP v1 with security updates:
 
 SMCP v1 is designed to protect against the following threat categories:
 
-1. **Command Injection Attacks**
+1. Command Injection Attacks
    - Shell command injection
    - Code execution attempts
    - System command manipulation
 
-2. **Prompt Injection and Manipulation**
+2. Prompt Injection and Manipulation
    - Hidden instructions in tool descriptions
    - Context poisoning attacks
    - Instruction override attempts
 
-3. **Authentication and Authorization Bypass**
+3. Authentication and Authorization Bypass
    - Session hijacking
    - Token theft and replay
    - Privilege escalation
 
-4. **Denial of Service Attacks**
+4. Denial of Service Attacks
    - Resource exhaustion
    - Rate limit bypass
    - Memory exhaustion
 
-5. **Cryptographic Attacks**
+5. Cryptographic Attacks
    - Man-in-the-middle attacks
    - Key extraction attempts
    - Downgrade attacks
 
-6. **Supply Chain Attacks**
+6. Supply Chain Attacks
    - Malicious dependencies
    - Compromised tools
    - Backdoor insertion
