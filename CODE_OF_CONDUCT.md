@@ -188,9 +188,9 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 ## Contact Information
 
-- **General Conduct Issues**: conduct@smcp-project.org
-- **Security-Related Conduct**: security@smcp-project.org
-- **Project Maintainers**: maintainers@smcp-project.org
+- General Conduct Issues: conduct@example.org
+- Security-Related Conduct: security@example.org
+- Project Maintainers: maintainers@example.org
 
 ## Acknowledgments
 
