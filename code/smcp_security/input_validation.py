@@ -1,6 +1,6 @@
 """Input Validation and Sanitization Layer
 
-Provides comprehensive input validation, command injection prevention,
+Provides input validation, command injection prevention,
 and prompt injection detection for MCP requests.
 """
 
