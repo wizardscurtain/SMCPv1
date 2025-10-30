@@ -1,0 +1,296 @@
+# Development and Testing Dependencies for SMCP v1
+
+# Core testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.3.0  # Parallel test execution
+pytest-mock>=3.11.0
+pytest-timeout>=2.1.0
+pytest-benchmark>=4.0.0
+pytest-html>=3.2.0
+pytest-json-report>=1.5.0
+
+# HTTP testing
+httpx>=0.25.0
+responses>=0.23.0
+requests-mock>=1.11.0
+
+# Security testing
+bandit>=1.7.5
+safety>=2.3.0
+pip-audit>=2.6.0
+
+# Code quality and formatting
+black>=23.10.0
+flake8>=6.1.0
+mypy>=1.7.0
+isort>=5.12.0
+pre-commit>=3.5.0
+
+# Security-specific testing tools
+cryptography>=41.0.0  # For crypto testing
+faker>=19.0.0  # For generating test data
+hypothesis>=6.88.0  # Property-based testing
+
+# Performance testing
+memory-profiler>=0.61.0
+psutil>=5.9.0
+locust>=2.17.0  # Load testing
+
+# ML testing (optional)
+scikit-learn>=1.3.0
+numpy>=1.24.0
+joblib>=1.3.0
+
+# Documentation testing
+doctest>=1.0.0
+sphinx>=7.1.0  # For doc generation
+
+# Fuzzing and property testing
+atheris>=2.2.0  # Fuzzing framework
+
+# Test data generation
+factory-boy>=3.3.0
+freezegun>=1.2.0  # Time mocking
+
+# Reporting and analysis
+coverage[toml]>=7.3.0
+junit2html>=30.1.0
+allure-pytest>=2.13.0
+
+# Development utilities
+ipython>=8.16.0
+ipdb>=0.13.0
+watchdog>=3.0.0  # File watching for auto-testing
+
+# Type checking
+types-requests>=2.31.0
+types-PyYAML>=6.0.0
+
+# Linting and security
+flake8-bandit>=4.1.0
+flake8-bugbear>=23.9.0
+flake8-docstrings>=1.7.0
+flake8-import-order>=0.18.0
+flake8-security>=1.7.0
+
+# Git hooks and automation
+pre-commit-hooks>=4.5.0
+commitizen>=3.12.0
+
+# Environment management
+python-dotenv>=1.0.0
+
+# JSON schema validation for testing
+jsonschema>=4.20.0
+
+# Time and date utilities for testing
+python-dateutil>=2.8.0
+
+# Async testing utilities
+aiofiles>=23.2.0
+aioresponses>=0.7.0
+
+# Database testing (if needed)
+sqlalchemy>=2.0.0  # For database integration tests
+
+# Configuration testing
+pydantic>=2.5.0
+
+# Logging testing
+structlog>=23.2.0
+
+# Network testing
+aiohttp>=3.9.0
+
+# File system testing
+tempfile>=1.0.0  # Built-in, but listed for clarity
+
+# Regular expressions testing
+regex>=2023.10.0
+
+# Serialization testing
+orjson>=3.9.0
+
+# Compression testing
+gzip>=1.0.0  # Built-in
+
+# Base64 and encoding testing
+base64>=1.0.0  # Built-in
+
+# Hash testing
+hashlib>=1.0.0  # Built-in
+
+# Random testing
+secrets>=1.0.0  # Built-in
+
+# Threading and concurrency testing
+threading>=1.0.0  # Built-in
+concurrent.futures>=1.0.0  # Built-in
+
+# Process testing
+subprocess>=1.0.0  # Built-in
+
+# System testing
+os>=1.0.0  # Built-in
+sys>=1.0.0  # Built-in
+
+# Path testing
+pathlib>=1.0.0  # Built-in
+
+# Collections testing
+collections>=1.0.0  # Built-in
+
+# Itertools testing
+itertools>=1.0.0  # Built-in
+
+# Functools testing
+functools>=1.0.0  # Built-in
+
+# Contextlib testing
+contextlib>=1.0.0  # Built-in
+
+# Warnings testing
+warnings>=1.0.0  # Built-in
+
+# Unittest mock (backup)
+unittest.mock>=1.0.0  # Built-in
+
+# Decimal testing for precision
+decimal>=1.0.0  # Built-in
+
+# Fractions testing
+fractions>=1.0.0  # Built-in
+
+# Statistics testing
+statistics>=1.0.0  # Built-in
+
+# Math testing
+math>=1.0.0  # Built-in
+
+# Operator testing
+operator>=1.0.0  # Built-in
+
+# Copy testing
+copy>=1.0.0  # Built-in
+
+# Pickle testing
+pickle>=1.0.0  # Built-in
+
+# Shelve testing
+shelve>=1.0.0  # Built-in
+
+# DBM testing
+dbm>=1.0.0  # Built-in
+
+# SQLite testing
+sqlite3>=1.0.0  # Built-in
+
+# CSV testing
+csv>=1.0.0  # Built-in
+
+# ConfigParser testing
+configparser>=1.0.0  # Built-in
+
+# Logging testing (built-in)
+logging>=1.0.0  # Built-in
+
+# Email testing
+email>=1.0.0  # Built-in
+
+# MIME testing
+mimetypes>=1.0.0  # Built-in
+
+# URL testing
+urllib>=1.0.0  # Built-in
+
+# HTML testing
+html>=1.0.0  # Built-in
+
+# XML testing
+xml>=1.0.0  # Built-in
+
+# JSON testing
+json>=1.0.0  # Built-in
+
+# Zlib testing
+zlib>=1.0.0  # Built-in
+
+# Tarfile testing
+tarfile>=1.0.0  # Built-in
+
+# Zipfile testing
+zipfile>=1.0.0  # Built-in
+
+# Shutil testing
+shutil>=1.0.0  # Built-in
+
+# Glob testing
+glob>=1.0.0  # Built-in
+
+# FNmatch testing
+fnmatch>=1.0.0  # Built-in
+
+# Linecache testing
+linecache>=1.0.0  # Built-in
+
+# Traceback testing
+traceback>=1.0.0  # Built-in
+
+# Inspect testing
+inspect>=1.0.0  # Built-in
+
+# Dis testing
+dis>=1.0.0  # Built-in
+
+# Ast testing
+ast>=1.0.0  # Built-in
+
+# Keyword testing
+keyword>=1.0.0  # Built-in
+
+# Token testing
+token>=1.0.0  # Built-in
+
+# Tokenize testing
+tokenize>=1.0.0  # Built-in
+
+# Tabnanny testing
+tabnanny>=1.0.0  # Built-in
+
+# Pyclbr testing
+pyclbr>=1.0.0  # Built-in
+
+# Py_compile testing
+py_compile>=1.0.0  # Built-in
+
+# Compileall testing
+compileall>=1.0.0  # Built-in
+
+# Pkgutil testing
+pkgutil>=1.0.0  # Built-in
+
+# Modulefinder testing
+modulefinder>=1.0.0  # Built-in
+
+# Runpy testing
+runpy>=1.0.0  # Built-in
+
+# Importlib testing
+importlib>=1.0.0  # Built-in
+
+# Site testing
+site>=1.0.0  # Built-in
+
+# User testing
+user>=1.0.0  # Built-in (deprecated but may be used)
+
+# Builtins testing
+builtins>=1.0.0  # Built-in
+
+# Main testing
+__main__>=1.0.0  # Built-in
+
+# Future testing
+__future__>=1.0.0  # Built-in
