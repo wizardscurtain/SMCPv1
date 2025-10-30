@@ -459,7 +459,7 @@ async def demo_security_dashboard():
 
 async def main():
     """Main advanced demo function"""
-    print("🔒 SMCP Security Framework - Advanced Features Demo")
+    print("SMCP Security Framework - Advanced Features Demo")
     print("=" * 60)
     
     try:
