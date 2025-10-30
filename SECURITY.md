@@ -63,7 +63,7 @@ SMCP v1 implements a six-layer defense-in-depth architecture:
 We take security seriously and appreciate responsible disclosure of vulnerabilities. Please follow these guidelines:
 
 #### DO:
-- Report vulnerabilities privately to security@smcp-project.org
+- Report vulnerabilities privately to security@example.org
 - Provide detailed reproduction steps
 - Include proof-of-concept code if applicable
 - Allow 90 days for initial response and remediation
