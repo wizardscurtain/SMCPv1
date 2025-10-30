@@ -295,10 +295,10 @@ security_config = SecurityConfig(
 
 ## Security Contacts
 
-- **Security Team**: security@smcp-project.org
-- **Incident Response**: incident@smcp-project.org
-- **Security Research**: research@smcp-project.org
-- **General Security Questions**: security-help@smcp-project.org
+- Security Team: security@example.org
+- Incident Response: incident@example.org
+- Security Research: research@example.org
+- General Security Questions: security-help@example.org
 
 ## Security Resources
 
