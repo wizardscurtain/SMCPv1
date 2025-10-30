@@ -78,7 +78,7 @@ We take security seriously and appreciate responsible disclosure of vulnerabilit
 ### Reporting Process
 
 1. **Initial Report**
-   - Email: security@smcp-project.org
+   - Email: security@example.org
    - Subject: "SMCP v1 Security Vulnerability Report"
    - Include: Detailed description, reproduction steps, impact assessment
 
