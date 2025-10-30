@@ -148,22 +148,22 @@ bandit -r code/
 
 ### Security-Specific Guidelines
 
-1. **Input Validation**
+1. Input Validation
    - Always validate and sanitize inputs
    - Use whitelist approach when possible
    - Document validation rules
 
-2. **Cryptography**
+2. Cryptography
    - Use established cryptographic libraries
    - Follow current best practices
    - Document key management procedures
 
-3. **Error Handling**
+3. Error Handling
    - Don't expose sensitive information in errors
    - Log security events appropriately
    - Use custom exception types
 
-4. **Testing**
+4. Testing
    - Test both positive and negative cases
    - Include edge cases and boundary conditions
    - Test security controls thoroughly
