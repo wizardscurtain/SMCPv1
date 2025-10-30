@@ -36,7 +36,7 @@ Current MCP implementations suffer from several fundamental security deficiencie
 3. **Inadequate Authorization Controls**: Missing fine-grained access control systems allow privilege escalation and unauthorized resource access
 4. **Limited Rate Limiting**: Insufficient protection against DoS attacks and resource exhaustion
 5. **Cryptographic Weaknesses**: Inadequate encryption and key management practices expose sensitive communications
-6. **Lack of Anomaly Detection**: Absence of intelligent monitoring systems fails to detect sophisticated attacks
+6. **Lack of Anomaly Detection**: Absence of monitoring systems fails to detect attacks
 
 ### 1.3 Contributions
 
