@@ -105,7 +105,7 @@ Our SMCP v1 framework addresses these gaps by providing an integrated security s
 
 #### 3.1.1 Adversary Capabilities
 
-We consider a powerful adversary with the following capabilities:
+We consider an adversary with the following capabilities:
 
 1. **Network Access**: The adversary can intercept, modify, and inject network communications between MCP clients and servers
 2. **Partial System Compromise**: The adversary may have compromised individual MCP tools or servers but not the entire infrastructure
