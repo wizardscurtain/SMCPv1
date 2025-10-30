@@ -1269,7 +1269,7 @@ This paper presented SMCP v1, a comprehensive security framework specifically de
 
 2. **Advanced Threat Detection**: Our AI-based immune system employs machine learning algorithms to detect sophisticated attacks with 99.2% accuracy while maintaining a low false positive rate of 0.23%.
 
-3. **High-Performance Cryptography**: We implemented state-of-the-art cryptographic protection using ChaCha20-Poly1305 AEAD encryption and Argon2 key derivation, optimized for MCP communication patterns.
+3. **High-Performance Cryptography**: We implemented cryptographic protection using ChaCha20-Poly1305 AEAD encryption and Argon2 key derivation, optimized for MCP communication patterns.
 
 4. **Comprehensive Evaluation**: We conducted extensive performance and security evaluations demonstrating the framework's effectiveness against 15+ attack vectors while maintaining acceptable performance overhead.
 
