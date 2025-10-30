@@ -232,7 +232,7 @@ security_config = SecurityConfig(
 - [ ] Enable all security layers
 - [ ] Configure strict input validation
 - [ ] Set appropriate rate limits
-- [ ] Enable comprehensive audit logging
+- [ ] Enable audit logging
 - [ ] Configure secure key rotation
 - [ ] Set up monitoring and alerting
 - [ ] Regular security updates
