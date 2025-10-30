@@ -307,7 +307,7 @@ class SMCPSecurityFramework:
         # Perform anomaly detection
         anomaly_result = self.ai_immune.detect_anomaly(request_data)
         
-        if anomaly_result["is_anomaly"]:
+        if anomaly_result.is_anomaly:
             # Classify the threat
             threat_info = self.threat_classifier.classify_threat(
                 request_data, anomaly_result
@@ -317,8 +317,8 @@ class SMCPSecurityFramework:
             self.metrics["anomalies_detected"] += 1
             
             # Store threat score in context
-            auth_context["threat_score"] = anomaly_result["anomaly_score"]
-            auth_context["threat_type"] = threat_info.get("threat_type")
+            auth_context["threat_score"] = anomaly_result.anomaly_score
+            auth_context["threat_type"] = threat_info.threat_type
             
             # Take action based on threat severity
             if threat_info.get("severity") in ["HIGH", "CRITICAL"]:
