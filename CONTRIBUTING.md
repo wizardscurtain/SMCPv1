@@ -30,30 +30,30 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ### Development Setup
 
-1. **Fork and Clone**
+1. Fork and Clone
    ```bash
    git clone https://github.com/yourusername/smcp-v1.git
    cd smcp-v1
    ```
 
-2. **Install Dependencies**
+2. Install Dependencies
    ```bash
    cd code
    poetry install
    poetry install --group dev
    ```
 
-3. **Activate Virtual Environment**
+3. Activate Virtual Environment
    ```bash
    poetry shell
    ```
 
-4. **Run Tests**
+4. Run Tests
    ```bash
    pytest tests/ -v
    ```
 
-5. **Run Security Checks**
+5. Run Security Checks
    ```bash
    python -m pytest tests/security/ -v
    ```
