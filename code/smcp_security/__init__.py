@@ -20,6 +20,7 @@ from .ai_immune import AIImmuneSystem, ThreatClassifier
 
 __all__ = [
     'SMCPSecurityFramework',
+    'SecurityConfig',
     'InputValidator',
     'CommandInjectionPrevention', 
     'JWTAuthenticator',
