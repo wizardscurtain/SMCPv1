@@ -115,8 +115,12 @@ class RBACManager:
                 return Permission(action=parts[0], resource=parts[1])
         elif len(parts) == 3:
             # effect:action:resource
-            effect = PermissionEffect(parts[0])
-            return Permission(action=parts[1], resource=parts[2], effect=effect)
+            if parts[0] in ["allow", "deny"]:
+                effect = PermissionEffect(parts[0])
+                return Permission(action=parts[1], resource=parts[2], effect=effect)
+            else:
+                # Treat as action:resource:extra_resource
+                return Permission(action=parts[0], resource=":".join(parts[1:]))
         else:
             # More complex format with conditions (simplified)
             effect = PermissionEffect(parts[0]) if parts[0] in ["allow", "deny"] else PermissionEffect.ALLOW
