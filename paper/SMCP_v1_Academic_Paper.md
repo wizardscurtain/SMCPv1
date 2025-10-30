@@ -1,4 +1,4 @@
-# Secure Model Context Protocol (SMCP) v1: A Comprehensive Security Framework for AI Agent Interactions
+# Secure Model Context Protocol (SMCP) v1: A Security Framework for AI Agent Interactions
 
 **Authors**: Research Team, Secure AI Systems Laboratory  
 **Date**: October 2025  
