@@ -4,10 +4,10 @@
 
 We actively support the following versions of SMCP v1 with security updates:
 
-| Version | Supported          | End of Life |
-| ------- | ------------------ | ----------- |
-| 1.0.x   | :white_check_mark: | TBD         |
-| < 1.0   | :x:                | Immediate   |
+| Version | Supported | End of Life |
+| ------- | --------- | ----------- |
+| 1.0.x   | Yes       | TBD         |
+| < 1.0   | No        | Immediate   |
 
 ## Security Model
 
