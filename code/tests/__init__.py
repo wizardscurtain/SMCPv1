@@ -1,6 +1,6 @@
 """Test suite for SMCP v1 Security Framework.
 
-This package contains comprehensive tests for all security layers and components
+This package contains tests for all security layers and components
 of the Secure Model Context Protocol (SMCP) v1 framework.
 
 Test Categories:
