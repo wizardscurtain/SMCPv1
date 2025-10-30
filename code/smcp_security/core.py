@@ -321,9 +321,9 @@ class SMCPSecurityFramework:
             auth_context["threat_type"] = threat_info.threat_type
             
             # Take action based on threat severity
-            if threat_info.get("severity") in ["HIGH", "CRITICAL"]:
+            if threat_info.severity in ["HIGH", "CRITICAL"]:
                 raise SecurityError(
-                    f"High-risk anomaly detected: {threat_info.get('threat_type')}"
+                    f"High-risk anomaly detected: {threat_info.threat_type}"
                 )
     
     async def _audit_request(self, request_data: Dict[str, Any],
