@@ -454,7 +454,6 @@ class DoSProtection:
     def _check_global_rate_limit(self) -> bool:
         """Check global system rate limit"""
         current_time = time.time()
-        window_start = current_time - 60  # 1 minute window
         
         # This is a simplified check - in production, use a proper sliding window
         recent_rate = self.global_metrics["total_requests"] / max(1, current_time - self.global_metrics["start_time"]) * 60
