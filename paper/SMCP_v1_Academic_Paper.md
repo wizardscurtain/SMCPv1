@@ -31,8 +31,8 @@ However, the increasing deployment of MCP-based systems has revealed critical se
 
 Current MCP implementations suffer from several fundamental security deficiencies:
 
-1. **Insufficient Input Validation**: Lack of comprehensive parsing and sanitization mechanisms allows command injection and prompt manipulation attacks
-2. **Weak Authentication Mechanisms**: Absence of robust authentication frameworks enables unauthorized access and session hijacking
+1. **Insufficient Input Validation**: Lack of parsing and sanitization mechanisms allows command injection and prompt manipulation attacks
+2. **Weak Authentication Mechanisms**: Absence of authentication frameworks enables unauthorized access and session hijacking
 3. **Inadequate Authorization Controls**: Missing fine-grained access control systems allow privilege escalation and unauthorized resource access
 4. **Limited Rate Limiting**: Insufficient protection against DoS attacks and resource exhaustion
 5. **Cryptographic Weaknesses**: Inadequate encryption and key management practices expose sensitive communications
