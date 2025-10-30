@@ -350,14 +350,14 @@ class SMCPSecurityFramework:
         # Map MCP methods to permissions
         permission_map = {
             "tools/list": "mcp:read",
-            "tools/call": "mcp:execute",
+            "tools/call": "mcp:read",  # Basic read permission, specific tool permissions checked at app level
             "resources/list": "mcp:read",
             "resources/read": "mcp:read",
             "prompts/list": "mcp:read",
             "prompts/get": "mcp:read",
         }
         
-        return permission_map.get(method, "mcp:execute")
+        return permission_map.get(method, "mcp:read")
     
     def _calculate_security_level(self, auth_context: Dict[str, Any]) -> str:
         """Calculate overall security level for the request"""
