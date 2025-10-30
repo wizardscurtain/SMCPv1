@@ -16,11 +16,10 @@ from typing import List, Dict, Any
 
 from smcp_security import (
     SMCPSecurityFramework,
-    SecurityConfig,
-    EventSeverity,
-    EventCategory,
-    AuthorizationContext
+    SecurityConfig
 )
+from smcp_security.audit import EventSeverity, EventCategory
+from smcp_security.authorization import AuthorizationContext
 
 
 class AdvancedMCPServer:
