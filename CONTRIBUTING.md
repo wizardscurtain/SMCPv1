@@ -68,19 +68,19 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ### 2. Development Workflow
 
-1. **Create a Branch**
+1. Create a Branch
    ```bash
    git checkout -b feature/your-feature-name
    # or
    git checkout -b fix/issue-number
    ```
 
-2. **Make Changes**
+2. Make Changes
    - Follow coding standards
    - Add tests for new functionality
    - Update documentation as needed
 
-3. **Test Your Changes**
+3. Test Your Changes
    ```bash
    # Run all tests
    pytest
