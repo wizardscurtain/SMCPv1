@@ -12,10 +12,9 @@ from datetime import datetime
 # Import SMCP security framework
 from smcp_security import (
     SMCPSecurityFramework,
-    SecurityConfig,
-    EventSeverity,
-    EventCategory
+    SecurityConfig
 )
+from smcp_security.audit import EventSeverity, EventCategory
 
 
 class BasicMCPServer:
