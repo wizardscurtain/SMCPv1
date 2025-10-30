@@ -1,6 +1,6 @@
 """Secure Model Context Protocol (SMCP) v1 Security Framework
 
-A comprehensive security framework for Model Context Protocol implementations
+A security framework for Model Context Protocol implementations
 that provides multi-layered defense against various attack vectors including
 command injection, prompt manipulation, authentication bypass, and more.
 """
