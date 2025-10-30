@@ -82,7 +82,7 @@ Recent advances in authenticated encryption, particularly the ChaCha20-Poly1305 
 
 ### 2.4 Anomaly Detection in Security Systems
 
-Machine learning-based anomaly detection has proven effective in various security contexts. The intrusion detection system by Patel et al. [17] demonstrates the effectiveness of ensemble methods for network security, while the behavioral analysis framework by Thompson et al. [18] shows promise for detecting sophisticated attacks.
+Machine learning-based anomaly detection has proven effective in various security contexts. The intrusion detection system by Patel et al. [17] demonstrates the effectiveness of ensemble methods for network security, while the behavioral analysis framework by Thompson et al. [18] shows promise for detecting attacks.
 
 Recent work on AI-based security systems has focused on adversarial robustness and attack detection. The adversarial example detection system by Garcia et al. [19] provides relevant techniques for identifying malicious inputs, while the neural network-based intrusion detection by Kim et al. [20] demonstrates practical implementation approaches. Our AI immune system builds upon these foundations while addressing the specific characteristics of MCP-based attacks.
 
