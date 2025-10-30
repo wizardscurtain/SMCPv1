@@ -4,6 +4,7 @@ Tests the AIImmuneSystem, ThreatClassifier, and anomaly detection components.
 """
 
 import pytest
+import os
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
