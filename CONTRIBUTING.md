@@ -240,7 +240,7 @@ def test_rate_limiting_enforcement():
 
 **DO NOT** create public issues for security vulnerabilities. Instead:
 
-1. Email security@smcp-project.org
+1. Email security@example.org
 2. Include detailed description
 3. Provide reproduction steps
 4. Allow 90 days for response
