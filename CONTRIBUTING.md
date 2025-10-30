@@ -105,11 +105,11 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ### 3. Pull Request Guidelines
 
-- **Title**: Use conventional commit format
-- **Description**: Clearly explain changes and motivation
-- **Tests**: Include comprehensive test coverage
-- **Documentation**: Update relevant documentation
-- **Security**: Consider security implications
+- Title: Use conventional commit format
+- Description: Clearly explain changes and motivation
+- Tests: Include test coverage
+- Documentation: Update relevant documentation
+- Security: Consider security implications
 
 #### PR Checklist
 
