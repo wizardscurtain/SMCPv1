@@ -422,11 +422,11 @@ async def demo_security_violations():
             response = await server.process_mcp_request(test["request"], context)
             
             if "error" in response:
-                print(f"  🛡️  Blocked: {response['error']['message']}")
+                print(f"  Blocked: {response['error']['message']}")
             else:
-                print(f"  ⚠️  Allowed (unexpected)")
+                print(f"  Allowed (unexpected)")
         except Exception as e:
-            print(f"  🛡️  Blocked: {str(e)}")
+            print(f"  Blocked: {str(e)}")
         
         print()
 
