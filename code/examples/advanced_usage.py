@@ -468,16 +468,16 @@ async def main():
         await demo_security_dashboard()
         
         print("\n" + "=" * 60)
-        print("✅ Advanced Demo Complete!")
+        print("Advanced Demo Complete!")
         print("\nAdvanced features demonstrated:")
-        print("  🤖 AI immune system training")
-        print("  🎯 Advanced threat detection")
-        print("  🚨 Automated incident response")
-        print("  📊 Comprehensive security dashboard")
-        print("  🔍 Real-time monitoring")
+        print("  - AI immune system training")
+        print("  - Advanced threat detection")
+        print("  - Automated incident response")
+        print("  - Security dashboard capabilities")
+        print("  - Real-time monitoring")
         
     except Exception as e:
-        print(f"\n❌ Demo error: {str(e)}")
+        print(f"\nDemo error: {str(e)}")
         import traceback
         traceback.print_exc()
 
