@@ -271,7 +271,7 @@ The Secure Model Context Protocol (SMCP) v1 framework implements a defense-in-de
 
 #### 4.2.1 Design Principles
 
-The input validation layer implements a comprehensive defense against injection attacks through:
+The input validation layer implements defense against injection attacks through:
 
 1. **Schema-based Validation**: All MCP messages are validated against strict JSON schemas
 2. **Context-aware Parsing**: Validation rules adapt based on tool types and user permissions
