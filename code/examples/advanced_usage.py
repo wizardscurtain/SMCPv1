@@ -426,7 +426,7 @@ async def demo_threat_detection():
             response = await server.process_request_with_monitoring(request, context)
             print(f"  Response: {response.get('result', 'No result')}")
         except Exception as e:
-            print(f"  🛡️  Blocked: {str(e)}")
+            print(f"  Blocked: {str(e)}")
     
     # Show active threats
     if server.active_threats:
