@@ -233,7 +233,7 @@ Based on analysis of MCP vulnerabilities [2,3,4], we identify the following prim
 
 ### 4.1 Architecture Overview
 
-The Secure Model Context Protocol (SMCP) v1 framework implements a comprehensive defense-in-depth security architecture consisting of six integrated layers:
+The Secure Model Context Protocol (SMCP) v1 framework implements a defense-in-depth security architecture consisting of six integrated layers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
