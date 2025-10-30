@@ -62,9 +62,9 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ### 1. Issue Creation
 
-- **Bug Reports**: Use the bug report template
-- **Feature Requests**: Use the feature request template
-- **Security Issues**: Follow our [Security Policy](SECURITY.md)
+- Bug Reports: Use the bug report template
+- Feature Requests: Use the feature request template
+- Security Issues: Follow our [Security Policy](SECURITY.md)
 
 ### 2. Development Workflow
 
