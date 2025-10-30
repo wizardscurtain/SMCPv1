@@ -1263,9 +1263,9 @@ Compared to commercial security products:
 
 ### 8.1 Summary of Contributions
 
-This paper presented SMCP v1, a comprehensive security framework specifically designed to address critical vulnerabilities in Model Context Protocol implementations. Our key contributions include:
+This paper presented SMCP v1, a security framework designed to address critical vulnerabilities in Model Context Protocol implementations. Our key contributions include:
 
-1. **Novel Security Architecture**: We developed the first comprehensive security framework specifically designed for MCP environments, implementing a six-layer defense-in-depth architecture that addresses all major vulnerability classes.
+1. **Novel Security Architecture**: We developed the first security framework specifically designed for MCP environments, implementing a six-layer defense-in-depth architecture that addresses all major vulnerability classes.
 
 2. **Advanced Threat Detection**: Our AI-based immune system employs machine learning algorithms to detect sophisticated attacks with 99.2% accuracy while maintaining a low false positive rate of 0.23%.
 
