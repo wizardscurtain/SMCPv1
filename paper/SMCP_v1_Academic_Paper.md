@@ -115,7 +115,7 @@ We consider an adversary with the following capabilities:
 
 #### 3.1.2 Attack Vectors
 
-Based on comprehensive analysis of MCP vulnerabilities [2,3,4], we identify the following primary attack vectors:
+Based on analysis of MCP vulnerabilities [2,3,4], we identify the following primary attack vectors:
 
 **A1. Command Injection Attacks**
 - Malicious commands embedded in MCP tool parameters
