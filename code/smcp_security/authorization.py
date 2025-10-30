@@ -247,13 +247,14 @@ class RBACManager:
         Returns:
             True if permission matches
         """
-        # Check action match (supports wildcards)
-        if not self._matches_pattern(permission.action, required_action):
-            return False
+        # Reconstruct the full permission string for comparison
+        perm_full = f"{permission.action}:{permission.resource}"
         
-        # Check resource match (supports wildcards)
-        if not self._matches_pattern(permission.resource, resource):
-            return False
+        # Check if the permission matches the required action
+        if not self._matches_pattern(perm_full, required_action):
+            # Also try matching just the action part
+            if not self._matches_pattern(permission.action, required_action):
+                return False
         
         return True
     
