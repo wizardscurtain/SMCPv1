@@ -341,9 +341,9 @@ async def demo_normal_requests():
             )
             
             if "error" in response:
-                print(f"  ❌ Error: {response['error']['message']}")
+                print(f"  Error: {response['error']['message']}")
             else:
-                print(f"  ✅ Success")
+                print(f"  Success")
                 if "security_metadata" in response:
                     metadata = response["security_metadata"]
                     print(f"     Security Level: {metadata.get('security_level')}")
