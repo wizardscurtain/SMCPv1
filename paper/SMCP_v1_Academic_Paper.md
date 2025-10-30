@@ -95,7 +95,7 @@ While existing research provides valuable insights into individual security comp
 3. **Performance Overhead**: Many security solutions introduce significant performance penalties unsuitable for real-time AI interactions
 4. **Lack of AI-Specific Protections**: Current frameworks do not address AI-specific attack vectors such as prompt injection and model manipulation
 
-Our SMCP v1 framework addresses these gaps by providing a comprehensive, integrated security solution specifically designed for MCP environments with minimal performance impact.
+Our SMCP v1 framework addresses these gaps by providing an integrated security solution designed for MCP environments with minimal performance impact.
 
 ---
 
