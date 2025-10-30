@@ -125,10 +125,10 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ### Python Style
 
-- **PEP 8**: Follow Python style guide
-- **Type Hints**: Use type annotations
-- **Docstrings**: Use Google-style docstrings
-- **Line Length**: Maximum 88 characters (Black formatter)
+- PEP 8: Follow Python style guide
+- Type Hints: Use type annotations
+- Docstrings: Use Google-style docstrings
+- Line Length: Maximum 88 characters (Black formatter)
 
 ### Code Quality Tools
 
