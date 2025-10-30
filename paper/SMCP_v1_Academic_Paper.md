@@ -111,7 +111,7 @@ We consider an adversary with the following capabilities:
 2. **Partial System Compromise**: The adversary may have compromised individual MCP tools or servers but not the entire infrastructure
 3. **Social Engineering**: The adversary can manipulate users to perform actions that compromise security
 4. **Supply Chain Access**: The adversary may introduce malicious components through compromised software dependencies
-5. **Advanced Persistent Threats**: The adversary can maintain long-term access and adapt attack strategies based on system responses
+5. **Persistent Threats**: The adversary can maintain long-term access and adapt attack strategies based on system responses
 
 #### 3.1.2 Attack Vectors
 
