@@ -1,6 +1,6 @@
 """Audit and Monitoring Layer
 
-Provides comprehensive logging, monitoring, and forensic capabilities
+Provides logging, monitoring, and forensic capabilities
 for SMCP security events.
 """
 
