@@ -49,12 +49,12 @@ SMCP v1 is designed to protect against the following threat categories:
 
 SMCP v1 implements a six-layer defense-in-depth architecture:
 
-1. **Input Validation & Sanitization**
-2. **Authentication & Authorization**
-3. **Rate Limiting & DoS Protection**
-4. **Cryptographic Security**
-5. **Audit & Monitoring**
-6. **AI Immune System**
+1. Input Validation & Sanitization
+2. Authentication & Authorization
+3. Rate Limiting & DoS Protection
+4. Cryptographic Security
+5. Audit & Monitoring
+6. AI Immune System
 
 ## Reporting a Vulnerability
 
