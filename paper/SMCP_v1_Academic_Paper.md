@@ -78,7 +78,7 @@ Specialized protocol security frameworks have been developed for specific domain
 
 Cryptographic protection of AI systems has received significant attention, particularly in the context of federated learning and privacy-preserving machine learning. The work by Li et al. [13] on secure multi-party computation for AI training provides relevant cryptographic techniques, while the privacy-preserving inference framework by Wang et al. [14] demonstrates practical cryptographic implementations.
 
-Recent advances in authenticated encryption, particularly the ChaCha20-Poly1305 construction [15], have shown superior performance characteristics for software-based implementations. The Argon2 password hashing function [16] has emerged as the standard for secure key derivation. Our framework leverages these state-of-the-art cryptographic primitives optimized for MCP communication patterns.
+Recent advances in authenticated encryption, particularly the ChaCha20-Poly1305 construction [15], have shown superior performance characteristics for software-based implementations. The Argon2 password hashing function [16] has emerged as the standard for secure key derivation. Our framework leverages these cryptographic primitives optimized for MCP communication patterns.
 
 ### 2.4 Anomaly Detection in Security Systems
 
