@@ -67,7 +67,7 @@ class SecurityConfig:
 class SMCPSecurityFramework:
     """Main SMCP Security Framework
     
-    Integrates all security layers into a comprehensive defense system.
+    Integrates all security layers into a defense system.
     """
     
     def __init__(self, config: SecurityConfig = None):
