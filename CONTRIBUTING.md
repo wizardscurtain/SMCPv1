@@ -324,7 +324,7 @@ def validate_input(data: Dict[str, Any], context: str = None) -> Dict[str, Any]:
 
 - **GitHub Discussions**: General questions and discussions
 - **GitHub Issues**: Bug reports and feature requests
-- **Security Email**: security@smcp-project.org
+- Security Email: security@example.org
 - **Documentation**: Project wiki and docs/
 
 ### Getting Help
