@@ -156,7 +156,7 @@ We use the following severity levels:
 ### Monitoring & Detection
 
 - **AI Immune System**: Machine learning anomaly detection
-- **Comprehensive Audit Logging**: Security event tracking
+- **Audit Logging**: Security event tracking
 - **Real-time Threat Classification**: Automated threat categorization
 - **Behavioral Analysis**: User pattern monitoring
 
