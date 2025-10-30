@@ -83,9 +83,12 @@ class SMCPSecurityFramework:
             )
         
         # Authentication layer
-        self.jwt_auth = JWTAuthenticator(
-            expiry_seconds=self.config.jwt_expiry_seconds
+        from .authentication import AuthenticationConfig
+        auth_config = AuthenticationConfig(
+            jwt_secret_key=secrets.token_urlsafe(32),
+            jwt_expiry_seconds=self.config.jwt_expiry_seconds
         )
+        self.jwt_auth = JWTAuthenticator(auth_config)
         
         if self.config.enable_mfa:
             self.mfa_manager = MFAManager()
