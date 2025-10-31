@@ -85,6 +85,14 @@ class SecurityConfig:
         # Validate anomaly threshold
         if not 0.0 <= self.anomaly_threshold <= 1.0:
             raise ValueError("Anomaly threshold must be between 0.0 and 1.0")
+        
+        # Validate JWT expiry
+        if self.jwt_expiry_seconds <= 0:
+            raise ValueError("JWT expiry must be positive")
+        
+        # Validate session timeout
+        if self.session_timeout_seconds <= 0:
+            raise ValueError("Session timeout must be positive")
 
 
 class SMCPSecurityFramework:
