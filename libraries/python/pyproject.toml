@@ -1,0 +1,123 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "smcp-security"
+version = "1.0.0"
+description = "Secure Model Context Protocol (SMCP) v1 - Production-ready security framework for MCP implementations"
+authors = ["SMCP Security Team <security@smcp.dev>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/wizardscurtain/SMCPv1"
+repository = "https://github.com/wizardscurtain/SMCPv1"
+documentation = "https://smcp-security.readthedocs.io"
+keywords = ["security", "mcp", "ai", "protocol", "authentication", "authorization", "validation"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: System :: Systems Administration :: Authentication/Directory"
+]
+packages = [{include = "smcp_security"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+# Core dependencies
+fastapi = {version = ">=0.104.0", optional = true}
+uvicorn = {version = ">=0.24.0", optional = true}
+pydantic = ">=2.0.0"
+python-multipart = {version = ">=0.0.6", optional = true}
+
+# Security dependencies
+cryptography = ">=41.0.0"
+PyJWT = ">=2.8.0"
+argon2-cffi = ">=23.1.0"
+bcrypt = ">=4.1.0"
+
+# Authentication
+pyotp = ">=2.9.0"
+qrcode = {version = ">=7.4.0", optional = true}
+
+# Machine Learning (optional)
+scikit-learn = {version = ">=1.3.0", optional = true}
+numpy = {version = ">=1.24.0", optional = true}
+scipy = {version = ">=1.11.0", optional = true}
+joblib = {version = ">=1.3.0", optional = true}
+
+# Data validation
+jsonschema = ">=4.20.0"
+
+# Utilities
+requests = ">=2.31.0"
+aiofiles = {version = ">=23.2.0", optional = true}
+python-dateutil = ">=2.8.0"
+
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = ">=7.4.0"
+pytest-asyncio = ">=0.21.0"
+pytest-cov = ">=4.1.0"
+pytest-mock = ">=3.11.0"
+httpx = ">=0.25.0"
+responses = ">=0.23.0"
+
+# Code quality
+black = ">=23.10.0"
+flake8 = ">=6.1.0"
+mypy = ">=1.7.0"
+isort = ">=5.12.0"
+
+# Security testing
+bandit = ">=1.7.5"
+safety = ">=2.3.0"
+
+# Documentation
+mkdocs = ">=1.5.0"
+mkdocs-material = ">=9.4.0"
+
+[tool.poetry.extras]
+fastapi = ["fastapi", "uvicorn", "python-multipart", "aiofiles"]
+ml = ["scikit-learn", "numpy", "scipy", "joblib"]
+qr = ["qrcode"]
+all = ["fastapi", "uvicorn", "python-multipart", "aiofiles", "scikit-learn", "numpy", "scipy", "joblib", "qrcode"]
+
+[tool.poetry.scripts]
+smcp-security = "smcp_security.cli:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--verbose",
+    "--cov=smcp_security",
+    "--cov-report=html",
+    "--cov-report=term-missing"
+]
+
+[tool.coverage.run]
+source = ["smcp_security"]
+omit = ["*/tests/*", "*/test_*"]
