@@ -118,6 +118,8 @@ class SMCPSecurityFramework:
         
         if self.config.enable_mfa:
             self.mfa_manager = MFAManager()
+        else:
+            self.mfa_manager = None
         
         # Authorization layer
         if self.config.enable_rbac:
