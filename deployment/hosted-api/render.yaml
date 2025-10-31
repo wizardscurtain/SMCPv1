@@ -1,0 +1,30 @@
+# Render.com deployment configuration for SMCP Security API
+services:
+  - type: web
+    name: smcp-security-api
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: |
+      gunicorn app:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SMCP_LOG_LEVEL
+        value: INFO
+      - key: SMCP_VALIDATION_STRICTNESS
+        value: standard
+      - key: SMCP_RATE_LIMIT
+        value: 100
+      - key: SMCP_ANOMALY_THRESHOLD
+        value: 0.7
+      - key: SMCP_ENABLE_MFA
+        value: false
+      - key: SMCP_MASTER_KEY
+        generateValue: true
+    healthCheckPath: /health
+    domains:
+      - smcp-security-api.onrender.com
