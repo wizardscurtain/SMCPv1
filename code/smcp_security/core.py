@@ -173,6 +173,9 @@ class SMCPSecurityFramework:
     
     def _setup_default_roles(self):
         """Setup default RBAC roles"""
+        if not self.rbac_manager:
+            return
+            
         # Define standard roles
         self.rbac_manager.define_role("user", [
             "mcp:read", "mcp:execute:safe_tools"
