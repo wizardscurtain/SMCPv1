@@ -466,6 +466,10 @@ class SMCPSecurityFramework:
             metrics["avg_processing_time_ms"] = sum(metrics["processing_time_ms"]) / len(metrics["processing_time_ms"])
             metrics["max_processing_time_ms"] = max(metrics["processing_time_ms"])
             metrics["min_processing_time_ms"] = min(metrics["processing_time_ms"])
+        else:
+            metrics["avg_processing_time_ms"] = 0.0
+            metrics["max_processing_time_ms"] = 0.0
+            metrics["min_processing_time_ms"] = 0.0
         
         # Calculate success rate
         total_requests = metrics["requests_processed"]
