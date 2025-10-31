@@ -1,0 +1,98 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>SMCP.Security</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>SMCP Security</Title>
+    <Description>Secure Model Context Protocol (SMCP) v1 - Production-ready security framework for MCP implementations in .NET</Description>
+    <Authors>SMCP Security Team</Authors>
+    <Company>SMCP Project</Company>
+    <Product>SMCP Security</Product>
+    <Copyright>Copyright © 2024 SMCP Security Team</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/wizardscurtain/SMCPv1</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/wizardscurtain/SMCPv1.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>security;mcp;ai;protocol;authentication;authorization;validation;dotnet;csharp</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Core ASP.NET Core dependencies -->
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.25" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+
+    <!-- JSON processing -->
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
+    <!-- Security dependencies -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.0.3" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+
+    <!-- Validation -->
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="FluentValidation" Version="11.8.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.1" />
+
+    <!-- Rate limiting -->
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
+    <PackageReference Include="System.Threading.RateLimiting" Version="6.0.0" />
+
+    <!-- TOTP for MFA -->
+    <PackageReference Include="OtpNet" Version="1.3.0" />
+    <PackageReference Include="QRCoder" Version="1.4.3" />
+
+    <!-- Memory caching -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
+
+    <!-- HTTP client -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+
+    <!-- Utilities -->
+    <PackageReference Include="System.Reactive" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <!-- .NET 6 specific packages -->
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test dependencies -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="xunit" Version="2.6.2" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="Moq" Version="4.20.69" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.25" Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>SMCP.Security.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
