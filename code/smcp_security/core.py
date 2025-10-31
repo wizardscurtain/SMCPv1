@@ -469,7 +469,7 @@ class SMCPSecurityFramework:
     
     async def train_ai_immune_system(self, training_requests: List[Dict[str, Any]]):
         """Train the AI immune system with normal request patterns"""
-        if self.config.enable_ai_immune:
+        if self.config.enable_ai_immune and self.ai_immune:
             await asyncio.to_thread(self.ai_immune.train, training_requests)
     
     def update_security_config(self, new_config: SecurityConfig):
