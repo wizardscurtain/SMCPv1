@@ -479,6 +479,17 @@ class SMCPSecurityFramework:
         else:
             metrics["success_rate"] = 1.0  # 100% success rate when no requests processed
         
+        # Add layer performance metrics
+        metrics["layer_performance"] = {
+            "input_validation": {"enabled": self.config.enable_input_validation, "avg_time_ms": 0.0},
+            "authentication": {"enabled": True, "avg_time_ms": 0.0},
+            "authorization": {"enabled": self.config.enable_rbac, "avg_time_ms": 0.0},
+            "rate_limiting": {"enabled": self.config.enable_rate_limiting, "avg_time_ms": 0.0},
+            "encryption": {"enabled": self.config.enable_encryption, "avg_time_ms": 0.0},
+            "ai_immune": {"enabled": self.config.enable_ai_immune, "avg_time_ms": 0.0},
+            "audit_logging": {"enabled": self.config.enable_audit_logging, "avg_time_ms": 0.0}
+        }
+        
         return metrics
     
     async def train_ai_immune_system(self, training_requests: List[Dict[str, Any]]):
