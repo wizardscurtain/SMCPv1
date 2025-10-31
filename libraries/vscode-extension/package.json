@@ -1,0 +1,240 @@
+{
+  "name": "smcp-security",
+  "displayName": "SMCP Security",
+  "description": "Secure Model Context Protocol (SMCP) v1 - VS Code extension for seamless MCP security integration",
+  "version": "1.0.0",
+  "publisher": "smcp-security",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Security",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "security",
+    "mcp",
+    "ai",
+    "protocol",
+    "authentication",
+    "authorization",
+    "validation"
+  ],
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:python",
+    "onLanguage:go",
+    "onLanguage:rust",
+    "onLanguage:java",
+    "onLanguage:csharp",
+    "onCommand:smcp.initializeProject",
+    "onCommand:smcp.generateConfig",
+    "onCommand:smcp.testRequest",
+    "onCommand:smcp.viewAuditLogs"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "smcp.initializeProject",
+        "title": "Initialize SMCP Security",
+        "category": "SMCP"
+      },
+      {
+        "command": "smcp.generateConfig",
+        "title": "Generate Security Configuration",
+        "category": "SMCP"
+      },
+      {
+        "command": "smcp.testRequest",
+        "title": "Test MCP Request",
+        "category": "SMCP"
+      },
+      {
+        "command": "smcp.viewAuditLogs",
+        "title": "View Audit Logs",
+        "category": "SMCP"
+      },
+      {
+        "command": "smcp.validateSecurity",
+        "title": "Validate Security Configuration",
+        "category": "SMCP"
+      },
+      {
+        "command": "smcp.generateKeys",
+        "title": "Generate Security Keys",
+        "category": "SMCP"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "smcp.initializeProject",
+          "when": "explorerResourceIsFolder",
+          "group": "smcp@1"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "smcp.testRequest",
+          "when": "editorHasSelection",
+          "group": "smcp@1"
+        }
+      ]
+    },
+    "snippets": [
+      {
+        "language": "javascript",
+        "path": "./snippets/javascript.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./snippets/typescript.json"
+      },
+      {
+        "language": "python",
+        "path": "./snippets/python.json"
+      },
+      {
+        "language": "go",
+        "path": "./snippets/go.json"
+      },
+      {
+        "language": "rust",
+        "path": "./snippets/rust.json"
+      }
+    ],
+    "configuration": {
+      "title": "SMCP Security",
+      "properties": {
+        "smcp.enableAutoValidation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic security validation on file save"
+        },
+        "smcp.validationStrictness": {
+          "type": "string",
+          "enum": [
+            "minimal",
+            "standard",
+            "maximum"
+          ],
+          "default": "standard",
+          "description": "Security validation strictness level"
+        },
+        "smcp.enableMFA": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable multi-factor authentication in generated configurations"
+        },
+        "smcp.defaultRateLimit": {
+          "type": "number",
+          "default": 100,
+          "description": "Default rate limit for generated configurations"
+        },
+        "smcp.enableAIImmune": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AI immune system in generated configurations"
+        },
+        "smcp.anomalyThreshold": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Anomaly detection threshold (0.0 to 1.0)"
+        },
+        "smcp.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "SMCP server URL for testing requests"
+        },
+        "smcp.logLevel": {
+          "type": "string",
+          "enum": [
+            "DEBUG",
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "CRITICAL"
+          ],
+          "default": "INFO",
+          "description": "Logging level for audit logs"
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "smcpSecurityView",
+          "name": "SMCP Security",
+          "when": "smcp.projectInitialized"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "smcp-security",
+          "title": "SMCP Security",
+          "icon": "$(shield)"
+        }
+      ]
+    },
+    "webviews": [
+      {
+        "viewType": "smcp.configEditor",
+        "displayName": "SMCP Configuration Editor"
+      },
+      {
+        "viewType": "smcp.auditViewer",
+        "displayName": "SMCP Audit Viewer"
+      },
+      {
+        "viewType": "smcp.requestTester",
+        "displayName": "SMCP Request Tester"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4",
+    "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "jsonschema": "^1.4.1",
+    "yaml": "^2.3.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wizardscurtain/SMCPv1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wizardscurtain/SMCPv1/issues"
+  },
+  "homepage": "https://github.com/wizardscurtain/SMCPv1#readme",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  }
+}
