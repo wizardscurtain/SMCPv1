@@ -1,0 +1,24 @@
+{
+  "security": {
+    "validation_strictness": "standard",
+    "enable_mfa": false,
+    "enable_rbac": true,
+    "enable_rate_limiting": true,
+    "default_rate_limit": 100,
+    "enable_encryption": true,
+    "enable_ai_immune": true,
+    "anomaly_threshold": 0.7,
+    "enable_audit_logging": true,
+    "log_level": "INFO"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "workers": 1
+  },
+  "api": {
+    "enable_cors": true,
+    "cors_origins": ["*"],
+    "enable_docs": true
+  }
+}

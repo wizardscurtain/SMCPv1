@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  smcp-security:
+    build:
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
+    image: smcp-security:latest
+    container_name: smcp-security
+    ports:
+      - "8080:8080"
+    environment:
+      - SMCP_LOG_LEVEL=INFO
+      - SMCP_RATE_LIMIT=100
+      - SMCP_VALIDATION_STRICTNESS=standard
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./config.json:/app/config.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - smcp-network
+
+  # Optional: Add a reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: smcp-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - smcp-security
+    networks:
+      - smcp-network
+    profiles:
+      - with-proxy
+
+networks:
+  smcp-network:
+    driver: bridge
+
+volumes:
+  smcp-logs:
+  smcp-data:
