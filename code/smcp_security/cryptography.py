@@ -295,6 +295,16 @@ class SMCPCrypto:
             if key_id != self.master_key_id:  # Never remove master key
                 del self.active_keys[key_id]
                 del self.key_metadata[key_id]
+    
+    def cleanup(self):
+        """Cleanup crypto resources"""
+        # Clear sensitive key material from memory
+        for key_id in list(self.active_keys.keys()):
+            if key_id != self.master_key_id:  # Keep master key
+                del self.active_keys[key_id]
+        
+        # Clear expired keys
+        self.cleanup_expired_keys()
 
 
 class Argon2KeyDerivation:
