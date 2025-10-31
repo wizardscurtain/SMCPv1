@@ -283,14 +283,4 @@ importlib>=1.0.0  # Built-in
 # Site testing
 site>=1.0.0  # Built-in
 
-# User testing
-user>=1.0.0  # Built-in (deprecated but may be used)
-
-# Builtins testing
-builtins>=1.0.0  # Built-in
-
-# Main testing
-__main__>=1.0.0  # Built-in
-
-# Future testing
-__future__>=1.0.0  # Built-in
+# Built-in modules (removed invalid entries)
