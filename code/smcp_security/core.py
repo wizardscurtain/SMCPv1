@@ -133,6 +133,9 @@ class SMCPSecurityFramework:
                 adaptive=self.config.adaptive_limits
             )
             self.dos_protection = DoSProtection()
+        else:
+            self.rate_limiter = None
+            self.dos_protection = None
         
         # Cryptographic layer
         if self.config.enable_encryption:
