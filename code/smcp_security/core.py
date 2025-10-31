@@ -288,6 +288,9 @@ class SMCPSecurityFramework:
     
     async def _validate_input(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Layer 1: Input validation and sanitization"""
+        if not self.input_validator:
+            return request_data
+            
         try:
             return await self.input_validator.validate_request(request_data)
         except ValidationError as e:
