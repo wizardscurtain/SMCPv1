@@ -472,6 +472,8 @@ class SMCPSecurityFramework:
         if total_requests > 0:
             successful_requests = total_requests - metrics["attacks_blocked"]
             metrics["success_rate"] = successful_requests / total_requests
+        else:
+            metrics["success_rate"] = 1.0  # 100% success rate when no requests processed
         
         return metrics
     
