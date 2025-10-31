@@ -615,3 +615,17 @@ class SMCPAuditLogger:
                 # Remove empty user activity lists
                 if not self.user_activity[user_id]:
                     del self.user_activity[user_id]
+    
+    def flush(self):
+        """Flush any pending log entries"""
+        # Force flush all handlers
+        for handler in self.logger.handlers:
+            handler.flush()
+    
+    def log_security_violation(self, violation_type: str, user_id: str, 
+                             details: Dict[str, Any], severity: str = "WARNING"):
+        """Log a security violation (alias for log_security_event)"""
+        return self.log_security_event(
+            violation_type, user_id, details, 
+            EventSeverity(severity.upper()), EventCategory.SYSTEM
+        )
