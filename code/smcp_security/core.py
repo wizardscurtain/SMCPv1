@@ -105,6 +105,8 @@ class SMCPSecurityFramework:
             self.input_validator = InputValidator(
                 strictness=self.config.validation_strictness
             )
+        else:
+            self.input_validator = None
         
         # Authentication layer
         from .authentication import AuthenticationConfig
