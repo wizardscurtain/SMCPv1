@@ -416,3 +416,147 @@ class SMCPSecurityFramework:
         self.config = new_config
         # Note: In a production system, this would selectively update
         # components that can be changed without restart
+    
+    def update_configuration(self, new_config: SecurityConfig):
+        """Update security configuration (alias for update_security_config)"""
+        # Validate configuration first
+        if hasattr(new_config, 'validation_strictness'):
+            if new_config.validation_strictness not in ["minimal", "standard", "maximum"]:
+                raise ValueError("Invalid validation strictness")
+        
+        self.update_security_config(new_config)
+    
+    def disable_layer(self, layer_name: str):
+        """Disable a specific security layer"""
+        layer_map = {
+            "input_validation": "enable_input_validation",
+            "mfa": "enable_mfa", 
+            "rbac": "enable_rbac",
+            "rate_limiting": "enable_rate_limiting",
+            "encryption": "enable_encryption",
+            "ai_immune": "enable_ai_immune",
+            "audit_logging": "enable_audit_logging"
+        }
+        
+        if layer_name in layer_map:
+            setattr(self.config, layer_map[layer_name], False)
+    
+    def enable_layer(self, layer_name: str):
+        """Enable a specific security layer"""
+        layer_map = {
+            "input_validation": "enable_input_validation",
+            "mfa": "enable_mfa",
+            "rbac": "enable_rbac", 
+            "rate_limiting": "enable_rate_limiting",
+            "encryption": "enable_encryption",
+            "ai_immune": "enable_ai_immune",
+            "audit_logging": "enable_audit_logging"
+        }
+        
+        if layer_name in layer_map:
+            setattr(self.config, layer_map[layer_name], True)
+    
+    def enrich_context(self, basic_context: Dict[str, Any]) -> Dict[str, Any]:
+        """Enrich security context with additional information"""
+        enriched = basic_context.copy()
+        
+        # Add timestamp
+        enriched["enriched_at"] = datetime.utcnow()
+        
+        # Add security metadata
+        enriched["security_framework_version"] = "1.0.0"
+        enriched["active_layers"] = self._get_active_layers()
+        
+        # Add risk assessment
+        ip_address = basic_context.get("ip_address", "")
+        if ip_address.startswith("192.168.") or ip_address.startswith("10."):
+            enriched["network_trust_level"] = "internal"
+        else:
+            enriched["network_trust_level"] = "external"
+        
+        return enriched
+    
+    def health_check(self) -> Dict[str, Any]:
+        """Perform health check of security framework"""
+        health = {
+            "status": "healthy",
+            "components": {},
+            "metrics": self.get_security_metrics(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        # Check each component
+        if hasattr(self, 'input_validator'):
+            health["components"]["input_validator"] = "active"
+        
+        if hasattr(self, 'jwt_auth'):
+            health["components"]["jwt_auth"] = "active"
+            
+        if hasattr(self, 'rbac_manager'):
+            health["components"]["rbac_manager"] = "active"
+            
+        if hasattr(self, 'rate_limiter'):
+            health["components"]["rate_limiter"] = "active"
+            
+        if hasattr(self, 'crypto'):
+            health["components"]["crypto"] = "active"
+            
+        if hasattr(self, 'ai_immune'):
+            health["components"]["ai_immune"] = "active"
+            
+        if hasattr(self, 'audit_logger'):
+            health["components"]["audit_logger"] = "active"
+        
+        return health
+    
+    def get_memory_usage(self) -> Dict[str, Any]:
+        """Get memory usage statistics"""
+        import psutil
+        import os
+        
+        process = psutil.Process(os.getpid())
+        memory_info = process.memory_info()
+        
+        return {
+            "rss": memory_info.rss,  # Resident Set Size
+            "vms": memory_info.vms,  # Virtual Memory Size
+            "percent": process.memory_percent(),
+            "available": psutil.virtual_memory().available,
+            "total": psutil.virtual_memory().total
+        }
+    
+    def add_security_policy(self, policy: Dict[str, Any]):
+        """Add a custom security policy"""
+        if not hasattr(self, '_custom_policies'):
+            self._custom_policies = []
+        
+        self._custom_policies.append(policy)
+    
+    def get_security_policies(self) -> List[Dict[str, Any]]:
+        """Get all custom security policies"""
+        return getattr(self, '_custom_policies', [])
+    
+    async def shutdown(self):
+        """Graceful shutdown of security framework"""
+        # Flush audit logs if available
+        if hasattr(self, 'audit_logger') and hasattr(self.audit_logger, 'flush'):
+            self.audit_logger.flush()
+        
+        # Cleanup crypto resources if available  
+        if hasattr(self, 'crypto') and hasattr(self.crypto, 'cleanup'):
+            self.crypto.cleanup()
+    
+    async def process_batch_requests(self, requests: List[Dict[str, Any]], 
+                                   user_context: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Process multiple requests in batch"""
+        results = []
+        for request in requests:
+            try:
+                result = await self.process_request(request, user_context)
+                results.append(result)
+            except Exception as e:
+                results.append({
+                    "error": str(e),
+                    "request_id": request.get("id")
+                })
+        return results
