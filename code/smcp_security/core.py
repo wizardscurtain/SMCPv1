@@ -123,6 +123,8 @@ class SMCPSecurityFramework:
         if self.config.enable_rbac:
             self.rbac_manager = RBACManager()
             self._setup_default_roles()
+        else:
+            self.rbac_manager = None
         
         # Rate limiting layer
         if self.config.enable_rate_limiting:
