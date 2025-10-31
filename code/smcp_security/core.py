@@ -62,6 +62,29 @@ class SecurityConfig:
     def __post_init__(self):
         if self.default_permissions is None:
             self.default_permissions = ["read"]
+        
+        # Validate configuration
+        self._validate_config()
+    
+    def _validate_config(self):
+        """Validate configuration parameters"""
+        # Validate validation strictness
+        valid_strictness = ["minimal", "standard", "maximum"]
+        if self.validation_strictness not in valid_strictness:
+            raise ValueError(f"Invalid validation strictness: {self.validation_strictness}")
+        
+        # Validate log level
+        valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        if self.log_level not in valid_log_levels:
+            raise ValueError(f"Invalid log level: {self.log_level}")
+        
+        # Validate rate limit
+        if self.default_rate_limit <= 0:
+            raise ValueError("Rate limit must be positive")
+        
+        # Validate anomaly threshold
+        if not 0.0 <= self.anomaly_threshold <= 1.0:
+            raise ValueError("Anomaly threshold must be between 0.0 and 1.0")
 
 
 class SMCPSecurityFramework:
