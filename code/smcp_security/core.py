@@ -359,6 +359,9 @@ class SMCPSecurityFramework:
     async def _ai_immune_analysis(self, request_data: Dict[str, Any],
                                 auth_context: Dict[str, Any]):
         """Layer 6: AI immune system analysis"""
+        if not self.ai_immune or not self.threat_classifier:
+            return
+            
         # Perform anomaly detection
         anomaly_result = self.ai_immune.detect_anomaly(request_data)
         
