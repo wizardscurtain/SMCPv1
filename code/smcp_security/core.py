@@ -388,6 +388,9 @@ class SMCPSecurityFramework:
                            context: Dict[str, Any], status: str,
                            error_message: str = None):
         """Layer 5: Audit logging"""
+        if not self.audit_logger:
+            return
+            
         self.audit_logger.log_security_event(
             "mcp_request",
             context.get("user_id", "unknown"),
