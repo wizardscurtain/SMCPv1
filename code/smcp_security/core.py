@@ -52,7 +52,7 @@ class SecurityConfig:
     
     # AI immune system settings
     enable_ai_immune: bool = True
-    anomaly_threshold: float = 0.8
+    anomaly_threshold: float = 0.7
     learning_mode: bool = False
     
     # Audit settings
