@@ -154,7 +154,9 @@ class SMCPSecurityFramework:
             self.ai_immune_system = self.ai_immune  # Alias for tests
             self.threat_classifier = ThreatClassifier()
         else:
+            self.ai_immune = None
             self.ai_immune_system = None
+            self.threat_classifier = None
         
         # Audit layer
         if self.config.enable_audit_logging:
