@@ -336,6 +336,9 @@ class SMCPSecurityFramework:
     
     async def _check_rate_limits(self, auth_context: Dict[str, Any], request_data: Dict[str, Any]):
         """Layer 3: Rate limiting and DoS protection"""
+        if not self.rate_limiter:
+            return
+            
         user_id = auth_context.get("user_id")
         
         # Check rate limits
@@ -343,7 +346,7 @@ class SMCPSecurityFramework:
             raise RateLimitError(f"Rate limit exceeded for user {user_id}")
         
         # Check for DoS patterns (disabled for demo)
-        # if not self.dos_protection.analyze_request_pattern(user_id, request_data):
+        # if self.dos_protection and not self.dos_protection.analyze_request_pattern(user_id, request_data):
         #     raise SecurityError("Suspicious request pattern detected")
     
     async def _process_cryptography(self, request_data: Dict[str, Any],
