@@ -1,0 +1,14 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+recursive-include smcp_security *.py
+recursive-include smcp_security/data *.json
+recursive-include smcp_security/templates *.html
+recursive-include smcp_security/static *
+include requirements.txt
+include requirements-dev.txt
+exclude tests/*
+exclude benchmarks/*
+exclude examples/*
+exclude *.pyc
+exclude __pycache__

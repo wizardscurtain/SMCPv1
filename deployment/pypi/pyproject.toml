@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smcp-security"
+version = "1.0.0"
+authors = [
+    {name = "SMCP Security Team", email = "security@smcp-framework.org"},
+]
+description = "Secure Model Context Protocol (SMCP) v1 - Comprehensive Security Framework"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: System :: Systems Administration :: Authentication/Directory",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Framework :: FastAPI",
+    "Framework :: AsyncIO",
+]
+keywords = [
+    "security", "mcp", "ai", "protocol", "authentication", 
+    "authorization", "middleware", "framework", "cybersecurity",
+    "model-context-protocol", "ai-security", "threat-detection"
+]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+    "python-multipart>=0.0.6",
+    "cryptography>=41.0.0",
+    "PyJWT>=2.8.0",
+    "argon2-cffi>=23.1.0",
+    "bcrypt>=4.1.0",
+    "pyotp>=2.9.0",
+    "qrcode>=7.4.0",
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+    "jsonschema>=4.20.0",
+    "requests>=2.31.0",
+    "aiofiles>=23.2.0",
+    "python-dateutil>=2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.10.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "isort>=5.12.0",
+]
+ml = [
+    "transformers>=4.35.0",
+    "torch>=2.1.0",
+]
+all = [
+    "transformers>=4.35.0",
+    "torch>=2.1.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.10.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "isort>=5.12.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/wizardscurtain/SMCPv1"
+"Bug Reports" = "https://github.com/wizardscurtain/SMCPv1/issues"
+"Source" = "https://github.com/wizardscurtain/SMCPv1"
+"Documentation" = "https://smcp-security.dev"
+"Funding" = "https://github.com/sponsors/wizardscurtain"
+
+[project.scripts]
+smcp-security = "smcp_security.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["../../SMCPv1/code"]
+
+[tool.setuptools.package-data]
+smcp_security = ["data/*.json", "templates/*.html", "static/*"]
