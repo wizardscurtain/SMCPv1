@@ -1,0 +1,91 @@
+[package]
+name = "smcp-security"
+version = "1.0.0"
+edition = "2021"
+authors = ["SMCP Security Team <security@smcp.dev>"]
+license = "MIT"
+description = "Secure Model Context Protocol (SMCP) v1 - Production-ready security framework for MCP implementations"
+homepage = "https://github.com/wizardscurtain/SMCPv1"
+repository = "https://github.com/wizardscurtain/SMCPv1"
+documentation = "https://docs.rs/smcp-security"
+readme = "README.md"
+keywords = ["security", "mcp", "ai", "protocol", "authentication"]
+categories = ["authentication", "cryptography", "web-programming"]
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE"
+]
+
+[dependencies]
+# Core dependencies
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Security dependencies
+jsonwebtoken = "9.2"
+argon2 = "0.5"
+rand = "0.8"
+sha2 = "0.10"
+hmac = "0.12"
+aes-gcm = "0.10"
+base64 = "0.21"
+
+# Authentication
+totp-rs = "5.4"
+qrcode = "0.14"
+
+# Validation
+validator = { version = "0.16", features = ["derive"] }
+regex = "1.10"
+
+# Rate limiting
+governor = "0.6"
+
+# HTTP framework support
+axum = { version = "0.7", optional = true }
+warp = { version = "0.3", optional = true }
+actix-web = { version = "4.4", optional = true }
+
+# Machine learning (optional)
+candle-core = { version = "0.3", optional = true }
+candle-nn = { version = "0.3", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+httpmock = "0.6"
+proptest = "1.4"
+
+[features]
+default = ["axum"]
+axum = ["dep:axum"]
+warp = ["dep:warp"]
+actix = ["dep:actix-web"]
+ml = ["dep:candle-core", "dep:candle-nn"]
+all = ["axum", "warp", "actix", "ml"]
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "axum_server"
+path = "examples/axum_server.rs"
+required-features = ["axum"]
+
+[[example]]
+name = "warp_server"
+path = "examples/warp_server.rs"
+required-features = ["warp"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
