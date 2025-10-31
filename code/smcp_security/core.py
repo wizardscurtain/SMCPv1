@@ -317,7 +317,7 @@ class SMCPSecurityFramework:
             raise AuthenticationError("Multi-factor authentication required")
         
         # Authorize request
-        if self.config.enable_rbac:
+        if self.config.enable_rbac and self.rbac_manager:
             required_permission = self._determine_required_permission(request_data)
             user_id = auth_payload.get("user_id")
             
