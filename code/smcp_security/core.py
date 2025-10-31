@@ -142,6 +142,7 @@ class SMCPSecurityFramework:
             self.crypto = SMCPCrypto()
             self.crypto_manager = self.crypto  # Alias for tests
         else:
+            self.crypto = None
             self.crypto_manager = None
         
         # AI immune system
