@@ -133,6 +133,9 @@ class SMCPSecurityFramework:
         # Cryptographic layer
         if self.config.enable_encryption:
             self.crypto = SMCPCrypto()
+            self.crypto_manager = self.crypto  # Alias for tests
+        else:
+            self.crypto_manager = None
         
         # AI immune system
         if self.config.enable_ai_immune:
@@ -140,13 +143,21 @@ class SMCPSecurityFramework:
                 threshold=self.config.anomaly_threshold,
                 learning_mode=self.config.learning_mode
             )
+            self.ai_immune_system = self.ai_immune  # Alias for tests
             self.threat_classifier = ThreatClassifier()
+        else:
+            self.ai_immune_system = None
         
         # Audit layer
         if self.config.enable_audit_logging:
             self.audit_logger = SMCPAuditLogger(
                 log_level=self.config.log_level
             )
+        else:
+            self.audit_logger = None
+        
+        # Add authenticator alias for tests
+        self.authenticator = self.jwt_auth
     
     def _setup_default_roles(self):
         """Setup default RBAC roles"""
