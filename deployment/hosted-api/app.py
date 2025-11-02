@@ -19,12 +19,23 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import uvicorn
 
-# Add SMCPv1 code to path
-sys.path.insert(0, '/app/SMCPv1/code')
+# Add SMCP code to path - handle both local development and Render deployment
+import os
+if os.path.exists('/opt/render/project/src/code'):
+    # Render deployment path
+    sys.path.insert(0, '/opt/render/project/src/code')
+elif os.path.exists('/app/code'):
+    # Local development path
+    sys.path.insert(0, '/app/code')
+else:
+    # Fallback - try relative path
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../code'))
 
 from smcp_security import (
     SMCPSecurityFramework,
-    SecurityConfig,
+    SecurityConfig
+)
+from smcp_security.exceptions import (
     SecurityError,
     ValidationError,
     AuthenticationError,
