@@ -255,7 +255,11 @@ async def validate_request(
             "client_ip": client_ip,
             "user_agent": request.headers.get("user-agent", "unknown"),
             "api_user": user["name"],
-            "api_tier": user["tier"]
+            "api_tier": user["tier"],
+            # Create a mock token for the security framework (since auth is handled at API level)
+            "token": "api_authenticated",
+            "user_id": user["name"],
+            "authenticated": True
         }
         
         # Override security config if provided
