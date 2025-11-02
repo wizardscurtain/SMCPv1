@@ -138,9 +138,9 @@ def initialize_security_framework() -> SMCPSecurityFramework:
     config = SecurityConfig(
         enable_input_validation=True,
         validation_strictness=os.environ.get("SMCP_VALIDATION_STRICTNESS", "standard"),
-        enable_mfa=os.environ.get("SMCP_ENABLE_MFA", "false").lower() == "true",
-        enable_rbac=True,
-        enable_rate_limiting=True,
+        enable_mfa=False,  # Disabled - API handles auth at higher level
+        enable_rbac=False,  # Disabled - API handles auth at higher level
+        enable_rate_limiting=False,  # Disabled - API handles rate limiting
         default_rate_limit=int(os.environ.get("SMCP_RATE_LIMIT", "100")),
         enable_encryption=True,
         enable_ai_immune=True,
