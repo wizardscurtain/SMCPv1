@@ -21,15 +21,30 @@ import uvicorn
 
 # Add SMCP code to path - handle both local development and Render deployment
 import os
-if os.path.exists('/opt/render/project/src/code'):
-    # Render deployment path
-    sys.path.insert(0, '/opt/render/project/src/code')
-elif os.path.exists('/app/code'):
-    # Local development path
-    sys.path.insert(0, '/app/code')
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Try different possible paths for the smcp_security module
+possible_paths = [
+    '/opt/render/project/src/code',  # Render deployment path
+    '/app/code',  # Local development path
+    os.path.join(current_dir, '../../code'),  # Relative path from hosted-api
+    os.path.join(current_dir, 'smcp_security'),  # If copied to same directory
+    './smcp_security'  # Current directory
+]
+
+smcp_path = None
+for path in possible_paths:
+    if os.path.exists(os.path.join(path, 'smcp_security')) or os.path.exists(path):
+        smcp_path = path
+        break
+
+if smcp_path:
+    sys.path.insert(0, smcp_path)
+    print(f"Added SMCP path: {smcp_path}")
 else:
-    # Fallback - try relative path
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../code'))
+    print("Warning: Could not find smcp_security module path")
+    # Add current directory as fallback
+    sys.path.insert(0, current_dir)
 
 from smcp_security import (
     SMCPSecurityFramework,
