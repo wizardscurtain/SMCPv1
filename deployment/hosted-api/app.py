@@ -256,10 +256,7 @@ async def validate_request(
             "user_agent": request.headers.get("user-agent", "unknown"),
             "api_user": user["name"],
             "api_tier": user["tier"],
-            # Create a mock token for the security framework (since auth is handled at API level)
-            "token": "api_authenticated",
-            "user_id": user["name"],
-            "authenticated": True
+            "user_id": user["name"]  # Use API user name as user_id
         }
         
         # Override security config if provided
