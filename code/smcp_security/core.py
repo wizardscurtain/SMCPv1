@@ -310,7 +310,21 @@ class SMCPSecurityFramework:
         if not user_context:
             raise AuthenticationError("No user context provided")
         
-        # Authenticate user
+        # If both MFA and RBAC are disabled, skip JWT authentication
+        # This allows for API-level authentication handling
+        if not self.config.enable_mfa and not self.config.enable_rbac:
+            # Use provided context directly for non-JWT authentication
+            return {
+                "user_id": user_context.get("user_id", user_context.get("api_user", "anonymous")),
+                "roles": user_context.get("roles", []),
+                "permissions": user_context.get("permissions", []),
+                "session_id": user_context.get("session_id", "api_session"),
+                "authenticated_at": datetime.utcnow(),
+                "api_tier": user_context.get("api_tier", "unknown"),
+                "client_ip": user_context.get("client_ip", "unknown")
+            }
+        
+        # Authenticate user with JWT
         token = user_context.get("token")
         if not token:
             raise AuthenticationError("No authentication token provided")
