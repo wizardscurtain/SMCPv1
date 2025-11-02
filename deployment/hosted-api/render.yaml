@@ -9,7 +9,14 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       # Copy SMCP security module to the deployment directory
-      cp -r ../../code/smcp_security ./smcp_security
+      if [ -d "../../code/smcp_security" ]; then
+        cp -r ../../code/smcp_security ./
+        echo "Copied smcp_security module successfully"
+      else
+        echo "Error: smcp_security module not found at ../../code/smcp_security"
+        ls -la ../../code/ || echo "../../code/ directory not found"
+        exit 1
+      fi
     startCommand: |
       gunicorn app:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
     envVars:
