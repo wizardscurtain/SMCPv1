@@ -10,6 +10,26 @@ def verify_module_imports():
     print("🔍 Verifying module imports...")
     
     try:
+        # Add SMCP path first
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        possible_paths = [
+            '/opt/render/project/src/code',
+            '/app/code',
+            os.path.join(current_dir, '../../code'),
+            os.path.join(current_dir, 'smcp_security'),
+            './smcp_security'
+        ]
+        
+        smcp_path = None
+        for path in possible_paths:
+            if os.path.exists(os.path.join(path, 'smcp_security')) or os.path.exists(path):
+                smcp_path = path
+                break
+        
+        if smcp_path:
+            sys.path.insert(0, smcp_path)
+            print(f"   Added SMCP path: {smcp_path}")
+        
         # Test SMCP security imports
         from smcp_security import SMCPSecurityFramework, SecurityConfig
         from smcp_security.exceptions import (
