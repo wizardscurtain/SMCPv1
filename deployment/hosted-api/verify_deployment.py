@@ -60,6 +60,7 @@ def verify_security_framework():
     print("\n🔍 Verifying security framework initialization...")
     
     try:
+        # SMCP path should already be added by verify_module_imports
         from smcp_security import SMCPSecurityFramework, SecurityConfig
         
         config = SecurityConfig(
