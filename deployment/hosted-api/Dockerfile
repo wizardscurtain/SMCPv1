@@ -13,8 +13,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy SMCPv1 source code
-COPY ../../SMCPv1/code/smcp_security ./smcp_security
+# Copy SMCP source code
+COPY ../../code/smcp_security ./smcp_security
 
 # Copy API application
 COPY app.py .
