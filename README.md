@@ -1,462 +1,310 @@
 # SMCPv1 - Secure Model Context Protocol
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/pypi/v/smcp-security.svg)](https://pypi.org/project/smcp-security/)
-[![Node.js](https://img.shields.io/npm/v/smcp-security.svg)](https://www.npmjs.com/package/smcp-security)
-[![Go](https://img.shields.io/github/v/tag/wizardscurtain/SMCPv1?label=go%20module)](https://pkg.go.dev/github.com/wizardscurtain/SMCPv1/libraries/go)
-[![Rust](https://img.shields.io/crates/v/smcp-security.svg)](https://crates.io/crates/smcp-security)
-[![Java](https://img.shields.io/maven-central/v/com.smcp/smcp-security.svg)](https://search.maven.org/artifact/com.smcp/smcp-security)
-[![C#](https://img.shields.io/nuget/v/SMCP.Security.svg)](https://www.nuget.org/packages/SMCP.Security/)
-[![VS Code](https://img.shields.io/visual-studio-marketplace/v/smcp-security.smcp-security.svg)](https://marketplace.visualstudio.com/items?itemName=smcp-security.smcp-security)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Status](https://img.shields.io/badge/status-beta-yellow.svg)](https://github.com/wizardscurtain/SMCPv1)
 
-A comprehensive, production-ready security framework for Model Context Protocol (MCP) implementations. SMCPv1 provides multi-layered security, AI-immune threat detection, and seamless integration across multiple programming languages.
+A Python security framework for Model Context Protocol (MCP) implementations. SMCPv1 provides multi-layered security with AI-enhanced threat detection.
+
+> **⚠️ Status: Beta** - This project is under active development. The Python implementation is functional but not yet production-tested. Performance benchmarks and security audits are pending.
 
 ## 🚀 Quick Start
 
-### Choose Your Language
+### Installation
 
-#### Python
 ```bash
-pip install smcp-security
+# Install from source (PyPI publication pending)
+git clone https://github.com/wizardscurtain/SMCPv1.git
+cd SMCPv1/code
+pip install -r requirements.txt
 ```
+
+### Basic Usage
 
 ```python
 from smcp_security import SMCPSecurityFramework
+from smcp_security.config import SecurityConfig
 
-security = SMCPSecurityFramework()
-validated_request = security.validate_request(mcp_request)
+# Initialize with default configuration
+config = SecurityConfig()
+security = SMCPSecurityFramework(config)
+
+# Process an MCP request
+async def handle_request(mcp_request, user_context):
+    result = await security.process_request(mcp_request, user_context)
+    return result
 ```
 
-#### Node.js/TypeScript
+### Run the Examples
+
 ```bash
-npm install smcp-security
+cd code/examples
+python basic_usage.py
 ```
-
-```typescript
-import { SMCPSecurityFramework } from 'smcp-security';
-
-const security = new SMCPSecurityFramework();
-const validatedRequest = await security.validateRequest(mcpRequest);
-```
-
-#### Go
-```bash
-go get github.com/wizardscurtain/SMCPv1/libraries/go@v1.0.0
-```
-
-```go
-import "github.com/wizardscurtain/SMCPv1/libraries/go/smcp"
-
-security, _ := smcp.NewSecurityFramework(nil)
-validatedRequest, _ := security.ValidateRequest(ctx, request)
-```
-
-#### Rust
-```bash
-cargo add smcp-security
-```
-
-```rust
-use smcp_security::SecurityFramework;
-
-let security = SecurityFramework::new(Default::default()).await?;
-let validated_request = security.validate_request(&request).await?;
-```
-
-#### Java
-```xml
-<dependency>
-    <groupId>com.smcp</groupId>
-    <artifactId>smcp-security</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-```java
-SMCPSecurityFramework security = new SMCPSecurityFramework();
-MCPRequest validatedRequest = security.validateRequest(request);
-```
-
-#### C#
-```bash
-dotnet add package SMCP.Security
-```
-
-```csharp
-var security = new SMCPSecurityFramework();
-var validatedRequest = await security.ValidateRequestAsync(request);
-```
-
-#### VS Code Extension
-1. Open VS Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "SMCP Security"
-4. Click Install
-5. Right-click project folder → "Initialize SMCP Security"
 
 ## 🛡️ Security Features
 
-### Multi-Layered Defense
-- **Input Validation**: Command injection, XSS, path traversal prevention
-- **Authentication**: JWT with MFA support
-- **Authorization**: Role-based access control (RBAC)
-- **Rate Limiting**: Adaptive DoS protection
-- **Encryption**: End-to-end data protection
-- **AI-Immune System**: ML-based threat detection
-- **Audit Logging**: Comprehensive security monitoring
+### Multi-Layered Defense Architecture
 
-### AI-Powered Threat Detection
-- Real-time anomaly detection
-- Behavioral analysis
-- Attack pattern recognition
-- Adaptive defense mechanisms
-- Zero-day threat protection
+1. **Input Validation Layer** (`input_validation.py`)
+   - JSON schema validation
+   - Command injection detection (6 pattern categories)
+   - Prompt injection detection (11+ suspicious patterns)
+   - XSS, SQL injection, path traversal prevention
+   - Context-aware sanitization
 
-### Production-Ready Performance
-- **Minimal Overhead**: < 1ms latency impact
-- **High Throughput**: 10,000+ requests/second
-- **Memory Efficient**: < 50MB footprint
-- **Horizontally Scalable**: Cloud-native architecture
-- **Framework Agnostic**: Works with any MCP implementation
+2. **Authentication Layer** (`authentication.py`)
+   - JWT token generation and validation
+   - Multi-factor authentication (TOTP/QR codes)
+   - Session management with timeout and IP tracking
+   - Failed attempt tracking with lockout (5 attempts, 15 min)
+   - Token refresh and revocation
 
-## 📚 Libraries & Integration
+3. **Authorization Layer** (`authorization.py`)
+   - Role-based access control (RBAC)
+   - Role inheritance and hierarchies
+   - Permission wildcards (e.g., `mcp:*`)
+   - Conditional permissions (time-based, IP-based)
+   - Permission caching with TTL
 
-### Core Libraries
+4. **Rate Limiting Layer** (`rate_limiting.py`)
+   - Adaptive rate limiting with reputation scoring
+   - Multiple limit types (RPS, RPM, RPH, bandwidth, concurrent)
+   - Bot detection via statistical analysis
+   - DoS protection with pattern analysis
+   - Whitelist/blacklist management
 
-| Language | Package | Installation | Documentation |
-|----------|---------|--------------|---------------|
-| **Python** | [`smcp-security`](https://pypi.org/project/smcp-security/) | `pip install smcp-security` | [📖 Docs](libraries/python/README.md) |
-| **Node.js** | [`smcp-security`](https://www.npmjs.com/package/smcp-security) | `npm install smcp-security` | [📖 Docs](libraries/nodejs/README.md) |
-| **Go** | [`github.com/wizardscurtain/SMCPv1/libraries/go`](https://pkg.go.dev/github.com/wizardscurtain/SMCPv1/libraries/go) | `go get github.com/wizardscurtain/SMCPv1/libraries/go@v1.0.0` | [📖 Docs](libraries/go/README.md) |
-| **Rust** | [`smcp-security`](https://crates.io/crates/smcp-security) | `cargo add smcp-security` | [📖 Docs](libraries/rust/README.md) |
-| **Java** | [`com.smcp:smcp-security`](https://search.maven.org/artifact/com.smcp/smcp-security) | Maven/Gradle dependency | [📖 Docs](libraries/java/README.md) |
-| **C#** | [`SMCP.Security`](https://www.nuget.org/packages/SMCP.Security/) | `dotnet add package SMCP.Security` | [📖 Docs](libraries/csharp/README.md) |
+5. **Cryptographic Layer** (`cryptography.py`)
+   - ChaCha20-Poly1305 AEAD encryption
+   - Argon2id key derivation
+   - Key lifecycle management (rotation, expiration)
+   - Session key generation with TTL
+   - Secure password hashing
 
-### Developer Tools
+6. **AI Immune System** (`ai_immune.py`)
+   - Pattern-based anomaly detection (always active)
+   - Optional ML-based detection (Isolation Forest, DBSCAN)
+   - 15-feature extraction system
+   - Threat classification (7 categories)
+   - Behavioral profiling and baseline establishment
 
-| Tool | Platform | Installation | Features |
-|------|----------|--------------|----------|
-| **VS Code Extension** | [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=smcp-security.smcp-security) | Search "SMCP Security" | Code snippets, config UI, testing tools, audit viewer |
+7. **Audit & Monitoring** (`audit.py`)
+   - Security event logging with severity levels
+   - Automatic incident detection and correlation
+   - Thread-safe event storage
+   - Event export (JSON, CSV)
+   - Security metrics tracking
 
-### Framework Support
+### What Works NOW
 
-#### Python
-- ✅ FastAPI
-- ✅ Flask
-- ✅ Django
-- ✅ Starlette
+✅ Full Python implementation (~4,700 lines)
+✅ Comprehensive test suite (~6,500+ lines of tests)
+✅ Working examples demonstrating attack blocking
+✅ Async/await architecture for high concurrency
+✅ Real cryptography (ChaCha20, Argon2)
+✅ Real ML anomaly detection (optional, with pattern fallback)
 
-#### Node.js/TypeScript
-- ✅ Express
-- ✅ Fastify
-- ✅ Koa
-- ✅ NestJS
+### What's Missing
 
-#### Go
-- ✅ Gorilla Mux
-- ✅ Gin
-- ✅ Echo
-- ✅ Fiber
-
-#### Rust
-- ✅ Axum
-- ✅ Warp
-- ✅ Actix-web
-- ✅ Rocket
-
-#### Java
-- ✅ Spring Boot
-- ✅ Quarkus
-- ✅ Micronaut
-- ✅ Helidon
-
-#### C#
-- ✅ ASP.NET Core
-- ✅ Minimal APIs
-- ✅ Blazor
-- ✅ gRPC
+⚠️ Persistent storage (currently in-memory only)
+⚠️ Distributed rate limiting (single-node only)
+⚠️ Production logging integration
+⚠️ Performance benchmarks (pending)
+⚠️ Third-party security audit (pending)
+⚠️ PyPI package publication (pending)
 
 ## 🏗️ Architecture
 
 ```mermaid
 graph TB
     A[MCP Request] --> B[Input Validation]
-    B --> C[AI Threat Detection]
-    C --> D[Rate Limiting]
-    D --> E[Authentication]
-    E --> F[Authorization]
-    F --> G[Request Processing]
-    G --> H[Audit Logging]
-    H --> I[MCP Response]
-    
-    J[Security Policies] --> B
-    J --> C
-    J --> D
-    J --> E
-    J --> F
-    
-    K[ML Models] --> C
-    L[User Database] --> E
-    M[Role Database] --> F
-    N[Audit Database] --> H
+    B --> C[Authentication]
+    C --> D[Authorization]
+    D --> E[Rate Limiting]
+    E --> F[Cryptography]
+    F --> G[AI Immune System]
+    G --> H[Request Processing]
+    H --> I[Audit Logging]
+    I --> J[MCP Response]
 ```
 
-### Security Layers
+### Security-First Design
 
-1. **Input Validation Layer**
-   - Schema validation
-   - Content sanitization
-   - Injection attack prevention
-   - Path traversal protection
-
-2. **AI Threat Detection Layer**
-   - Anomaly detection
-   - Behavioral analysis
-   - Pattern recognition
-   - Risk scoring
-
-3. **Rate Limiting Layer**
-   - Per-user limits
-   - Per-IP limits
-   - Adaptive thresholds
-   - DoS protection
-
-4. **Authentication Layer**
-   - JWT token validation
-   - Multi-factor authentication
-   - Session management
-   - Token refresh
-
-5. **Authorization Layer**
-   - Role-based access control
-   - Permission validation
-   - Resource-level security
-   - Dynamic policies
-
-6. **Audit Layer**
-   - Security event logging
-   - Compliance reporting
-   - Real-time monitoring
-   - Forensic analysis
+- **Defense in depth**: 6 sequential security layers
+- **Fail-secure**: Rejects requests on any layer failure
+- **Zero-trust**: Every request fully validated
+- **Audit everything**: Comprehensive security logging
+- **Adaptive**: ML-based threat detection learns over time
 
 ## 🔧 Configuration
 
 ### Basic Configuration
 
-```json
-{
-  "security": {
-    "enableInputValidation": true,
-    "validationStrictness": "maximum",
-    "enableMFA": true,
-    "enableRBAC": true,
-    "enableRateLimiting": true,
-    "defaultRateLimit": 100,
-    "enableAIImmune": true,
-    "anomalyThreshold": 0.8,
-    "enableAuditLogging": true
-  }
-}
+```python
+from smcp_security.config import SecurityConfig
+
+config = SecurityConfig(
+    enable_input_validation=True,
+    validation_strictness="standard",  # or "strict", "maximum"
+    enable_authentication=True,
+    enable_authorization=True,
+    enable_rate_limiting=True,
+    enable_cryptography=True,
+    enable_ai_immune=True,
+    enable_audit=True
+)
+
+security = SMCPSecurityFramework(config)
 ```
 
 ### Advanced Configuration
 
-```json
-{
-  "security": {
-    "inputValidation": {
-      "strictness": "maximum",
-      "maxRequestSize": "1MB",
-      "allowedMethods": ["tools/list", "tools/call"],
-      "blockedPatterns": ["../", "<script>", "DROP TABLE"]
-    },
-    "authentication": {
-      "jwtSecret": "${JWT_SECRET}",
-      "expirySeconds": 3600,
-      "mfa": {
-        "enabled": true,
-        "issuer": "SMCP Security",
-        "algorithm": "SHA1"
-      }
-    },
-    "authorization": {
-      "rbac": {
-        "enabled": true,
-        "defaultRole": "user",
-        "roles": {
-          "admin": ["*"],
-          "user": ["tools:list", "tools:call"],
-          "readonly": ["tools:list"]
-        }
-      }
-    },
-    "rateLimiting": {
-      "global": 1000,
-      "perUser": 100,
-      "perIP": 200,
-      "windowMs": 60000,
-      "adaptive": true
-    },
-    "aiImmune": {
-      "enabled": true,
-      "anomalyThreshold": 0.8,
-      "learningMode": false,
-      "models": ["anomaly_detection", "threat_classification"]
-    },
-    "audit": {
-      "enabled": true,
-      "logLevel": "INFO",
-      "destinations": ["file", "database", "siem"],
-      "retention": "90d"
-    }
-  }
-}
+```python
+config = SecurityConfig(
+    # Input Validation
+    validation_strictness="maximum",
+    max_request_size_mb=1,
+
+    # Authentication
+    jwt_expiry_seconds=3600,
+    enable_mfa=True,
+    failed_attempt_threshold=5,
+    lockout_duration_minutes=15,
+
+    # Authorization
+    default_role="user",
+    enable_rbac=True,
+
+    # Rate Limiting
+    default_rate_limit=100,  # requests per minute
+    enable_adaptive_rate_limiting=True,
+
+    # Cryptography
+    enable_encryption=True,
+    key_rotation_days=90,
+
+    # AI Immune System
+    anomaly_threshold=0.8,
+    enable_ml_detection=True,  # Requires scikit-learn
+
+    # Audit
+    audit_log_level="INFO",
+    max_audit_events=10000
+)
 ```
 
-## 📊 Monitoring & Analytics
-
-### Security Metrics
+## 📊 Monitoring & Metrics
 
 ```python
+# Get security metrics
 metrics = security.get_security_metrics()
-print(f"Total requests: {metrics.total_requests}")
-print(f"Blocked requests: {metrics.blocked_requests}")
-print(f"Threats detected: {metrics.threats_detected}")
-print(f"Average response time: {metrics.average_response_time}ms")
+
+print(f"Total requests: {metrics['total_requests']}")
+print(f"Blocked requests: {metrics['blocked_requests']}")
+print(f"Threats detected: {metrics['threats_detected']}")
+print(f"Average security score: {metrics['average_security_score']}")
+
+# Get health status
+health = security.health_check()
+print(f"System healthy: {health['healthy']}")
+print(f"Active components: {health['components']}")
 ```
 
-### Real-time Monitoring
+## 🧪 Testing
 
-- **Security Dashboard**: Real-time threat visualization
-- **Alert System**: Immediate notification of security events
-- **Compliance Reports**: Automated compliance reporting
-- **Performance Metrics**: Security overhead monitoring
-
-### Integration with Monitoring Systems
-
-- **Prometheus**: Metrics export
-- **Grafana**: Dashboard visualization
-- **ELK Stack**: Log aggregation and analysis
-- **Splunk**: SIEM integration
-- **DataDog**: APM integration
-
-## 🧪 Testing & Validation
-
-### Security Testing
+### Run Tests
 
 ```bash
-# Run security test suite
-python -m pytest tests/security/ -v
-
-# Run penetration tests
-python -m smcp_security.testing.pentest
-
-# Run compliance tests
-python -m smcp_security.testing.compliance
+cd code
+pip install -r requirements.txt -r requirements-dev.txt
+pytest tests/ -v
 ```
 
-### Performance Testing
+### Test Coverage
 
 ```bash
-# Benchmark security overhead
-python -m smcp_security.testing.benchmark
-
-# Load testing
-python -m smcp_security.testing.load_test --requests 10000 --concurrent 100
+pytest tests/ --cov=smcp_security --cov-report=html
+open htmlcov/index.html
 ```
 
-### Vulnerability Scanning
+### Security Scanning
 
 ```bash
-# Scan for known vulnerabilities
-python -m smcp_security.testing.vuln_scan
+# Run security linter
+bandit -r smcp_security/
 
-# Check dependencies
-python -m smcp_security.testing.dep_check
+# Check dependencies for vulnerabilities
+safety check -r requirements.txt
 ```
+
+## 📦 Dependencies
+
+### Core Dependencies (Required)
+
+- `cryptography>=41.0.0` - ChaCha20-Poly1305 encryption
+- `PyJWT>=2.8.0` - JWT authentication
+- `argon2-cffi>=23.1.0` - Key derivation
+- `pyotp>=2.9.0` - MFA/TOTP support
+- `qrcode>=7.4.0` - QR code generation for MFA
+- `jsonschema>=4.20.0` - Input validation
+
+### Optional Dependencies
+
+- `scikit-learn>=1.3.0` - ML-based anomaly detection
+- `numpy>=1.24.0` - Feature extraction
+- `scipy>=1.11.0` - Statistical analysis
+- `psutil` - Memory metrics
 
 ## 🚀 Deployment
 
-### Docker
+### Docker (Example)
 
 ```dockerfile
 FROM python:3.11-slim
 
-RUN pip install smcp-security
+WORKDIR /app
 
-COPY app.py .
-COPY smcp-config.json .
+COPY code/requirements.txt .
+RUN pip install -r requirements.txt
 
-EXPOSE 8000
+COPY code/ .
 
-CMD ["python", "app.py"]
+CMD ["python", "examples/basic_usage.py"]
 ```
 
-### Kubernetes
+### Environment Variables
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: smcp-secure-app
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: smcp-secure-app
-  template:
-    metadata:
-      labels:
-        app: smcp-secure-app
-    spec:
-      containers:
-      - name: app
-        image: your-app:latest
-        env:
-        - name: SMCP_CONFIG
-          valueFrom:
-            configMapKeyRef:
-              name: smcp-config
-              key: config.json
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: smcp-secrets
-              key: jwt-secret
+```bash
+export JWT_SECRET="your-secret-key-here"
+export SMCP_LOG_LEVEL="INFO"
+export SMCP_ENABLE_ML="true"
 ```
 
-### Cloud Platforms
+## 🗺️ Roadmap
 
-- **AWS**: Lambda, ECS, EKS support
-- **Google Cloud**: Cloud Run, GKE support
-- **Azure**: Container Instances, AKS support
-- **Render**: Native deployment support
+### Phase 1: Foundation (Weeks 1-2) - IN PROGRESS
+- [x] Core Python implementation
+- [x] Comprehensive test suite
+- [ ] Fix remaining test failures
+- [ ] Clean documentation
 
-## 📖 Documentation
+### Phase 2: Production Readiness (Weeks 3-6)
+- [ ] Add PostgreSQL for audit log persistence
+- [ ] Add Redis for rate limiting and sessions
+- [ ] Implement structured logging
+- [ ] Create deployment guides
 
-### Getting Started
-- [Installation Guide](docs/installation.md)
-- [Quick Start Tutorial](docs/quickstart.md)
-- [Configuration Reference](docs/configuration.md)
+### Phase 3: Validation (Weeks 7-10)
+- [ ] Load testing and benchmarks
+- [ ] Third-party security audit
+- [ ] Fix security findings
+- [ ] Document real performance numbers
 
-### Security Guides
-- [Security Best Practices](docs/security-best-practices.md)
-- [Threat Modeling](docs/threat-modeling.md)
-- [Incident Response](docs/incident-response.md)
-
-### API Documentation
-- [Python API](libraries/python/README.md)
-- [Node.js API](libraries/nodejs/README.md)
-- [Go API](libraries/go/README.md)
-- [Rust API](libraries/rust/README.md)
-- [Java API](libraries/java/README.md)
-- [C# API](libraries/csharp/README.md)
-
-### Examples
-- [Basic Usage Examples](examples/)
-- [Framework Integration](examples/frameworks/)
-- [Advanced Configurations](examples/advanced/)
-- [Production Deployments](examples/production/)
+### Phase 4: Release (Weeks 11-12)
+- [ ] Publish to PyPI as v1.0.0-beta
+- [ ] Set up CI/CD pipeline
+- [ ] Create production documentation
+- [ ] Onboard first beta users
 
 ## 🤝 Contributing
 
@@ -465,55 +313,38 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Development Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/wizardscurtain/SMCPv1.git
-cd SMCPv1
+cd SMCPv1/code
 
-# Install development dependencies
-./scripts/setup-dev.sh
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt -r requirements-dev.txt
 
 # Run tests
-./scripts/test-all.sh
-
-# Build all libraries
-./scripts/build-all.sh
-```
-
-### Publishing Libraries
-
-```bash
-# Publish all libraries
-./scripts/publish-all.sh
-
-# Publish specific library
-./scripts/publish-python.sh
-./scripts/publish-nodejs.sh
-./scripts/publish-go.sh
-./scripts/publish-rust.sh
-./scripts/publish-java.sh
-./scripts/publish-csharp.sh
-./scripts/publish-vscode.sh
+pytest tests/ -v
 ```
 
 ## 🔒 Security
 
 ### Reporting Security Issues
 
-For security issues, please email **security@smcp.dev** instead of using the issue tracker.
+For security vulnerabilities, please open a GitHub issue or contact the maintainers directly.
 
-### Security Advisories
+### Security Policy
 
-- [Security Policy](SECURITY.md)
-- [Vulnerability Disclosure](docs/vulnerability-disclosure.md)
-- [Security Advisories](https://github.com/wizardscurtain/SMCPv1/security/advisories)
+See [SECURITY.md](SECURITY.md) for our security policy and vulnerability disclosure process.
 
-### Compliance
+### Security Status
 
-- **SOC 2 Type II**: Compliant
-- **ISO 27001**: Aligned
-- **GDPR**: Privacy by design
-- **HIPAA**: Healthcare ready
-- **PCI DSS**: Payment card industry compliant
+- ✅ Input validation patterns implemented
+- ✅ Cryptography using industry-standard libraries
+- ✅ Authentication with proper token management
+- ⚠️ No third-party security audit (yet)
+- ⚠️ No formal compliance certifications
+- ⚠️ Beta software - not yet production-tested
 
 ## 📄 License
 
@@ -522,23 +353,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Model Context Protocol](https://github.com/modelcontextprotocol) team for the foundational protocol
-- Security researchers and contributors
-- Open source community for libraries and tools
+- Open source security libraries: cryptography, PyJWT, argon2-cffi, pyotp
+- Contributors and early testers
 
 ## 📞 Support
 
-- 📧 **Email**: support@smcp.dev
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/wizardscurtain/SMCPv1/discussions)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/wizardscurtain/SMCPv1/issues)
-- 📖 **Documentation**: [docs.smcp.dev](https://docs.smcp.dev)
-- 🌐 **Website**: [smcp.dev](https://smcp.dev)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/wizardscurtain/SMCPv1/discussions)
+- 📖 **Documentation**: See `/docs` directory and code examples
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by the SMCP Security Team**
+**Built for the MCP security community**
 
-[⭐ Star us on GitHub](https://github.com/wizardscurtain/SMCPv1) • [🐦 Follow on Twitter](https://twitter.com/smcp_security) • [💼 LinkedIn](https://linkedin.com/company/smcp-security)
+[⭐ Star us on GitHub](https://github.com/wizardscurtain/SMCPv1)
 
 </div>
