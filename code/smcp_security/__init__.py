@@ -32,7 +32,7 @@ app.add_middleware(SMCPMiddleware)
 ```
 """
 
-__version__ = "1.0.0-beta1"
+__version__ = "1.0.0b1"
 __author__ = "SMCP Security Team"
 __email__ = "security@smcp.dev"
 

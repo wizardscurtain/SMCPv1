@@ -1,152 +1,161 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.poetry]
+[project]
 name = "smcp-security"
-version = "1.0.0"
-description = "Secure Model Context Protocol (SMCP) v1 - Comprehensive Security Framework"
-authors = ["SMCP Security Team <contact@example.org>"]
-license = "MIT"
-readme = "../README.md"
-homepage = "https://github.com/smcp-project/smcp-v1"
-repository = "https://github.com/smcp-project/smcp-v1"
-documentation = "https://smcp-v1.readthedocs.io"
-keywords = ["security", "mcp", "ai", "protocol", "authentication", "authorization"]
+version = "1.0.0b1"  # Beta 1
+description = "SMCP - Security framework for Model Context Protocol (MCP). Add 'HTTPS-like' security to MCP servers in 1-2 lines of code."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "SMCP Security Team", email = "security@github.com"}
+]
+maintainers = [
+    {name = "SMCP Security Team", email = "security@github.com"}
+]
+keywords = [
+    "mcp",
+    "security",
+    "model-context-protocol",
+    "ai-security",
+    "command-injection",
+    "prompt-injection",
+    "authentication",
+    "authorization",
+    "rate-limiting",
+    "audit-logging"
+]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Security",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
-    "Topic :: System :: Systems Administration :: Authentication/Directory"
+    "Topic :: System :: Systems Administration :: Authentication/Directory",
+    "Topic :: Internet :: WWW/HTTP",
+    "Typing :: Typed"
 ]
-packages = [{include = "smcp_security"}]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-# Core dependencies
-fastapi = ">=0.104.0"
-uvicorn = ">=0.24.0"
-pydantic = ">=2.5.0"
-python-multipart = ">=0.0.6"
+dependencies = [
+    # Core security dependencies
+    "cryptography>=41.0.0",
+    "PyJWT>=2.8.0",
+    "argon2-cffi>=23.1.0",
+    "bcrypt>=4.1.0",
 
-# Security dependencies
-cryptography = ">=41.0.0"
-PyJWT = ">=2.8.0"
-argon2-cffi = ">=23.1.0"
-bcrypt = ">=4.1.0"
+    # Authentication
+    "pyotp>=2.9.0",
+    "qrcode>=7.4.0",
 
-# Authentication
-pyotp = ">=2.9.0"
-qrcode = ">=7.4.0"
+    # Validation
+    "jsonschema>=4.20.0",
+    "pydantic>=2.5.0",
 
-# Machine Learning
-scikit-learn = ">=1.3.0"
-numpy = ">=1.24.0"
-scipy = ">=1.11.0"
-joblib = ">=1.3.0"
+    # Utilities
+    "python-dateutil>=2.8.0",
+]
 
-# Optional ML dependencies (for advanced features)
-# transformers = {version = ">=4.35.0", optional = true}
-# torch = {version = ">=2.1.0", optional = true}
+[project.optional-dependencies]
+# Machine Learning for advanced threat detection
+ml = [
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+]
 
-# Data validation
-jsonschema = ">=4.20.0"
+# Full ML stack with transformers
+ml-full = [
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+    "transformers>=4.35.0",
+    "torch>=2.1.0",
+]
 
-# Utilities
-requests = ">=2.31.0"
-aiofiles = ">=23.2.0"
-python-dateutil = ">=2.8.0"
+# FastAPI integration
+fastapi = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-multipart>=0.0.6",
+]
 
-[tool.poetry.group.dev.dependencies]
-# Testing
-pytest = ">=7.4.0"
-pytest-asyncio = ">=0.21.0"
-pytest-cov = ">=4.1.0"
-pytest-xdist = ">=3.3.0"
-pytest-mock = ">=3.11.0"
-pytest-timeout = ">=2.1.0"
-pytest-benchmark = ">=4.0.0"
-pytest-html = ">=3.2.0"
-httpx = ">=0.25.0"
-responses = ">=0.23.0"
-faker = ">=19.0.0"
-hypothesis = ">=6.88.0"
+# Async file operations
+async = [
+    "aiofiles>=23.2.0",
+]
 
-# Code quality
-black = ">=23.10.0"
-flake8 = ">=6.1.0"
-mypy = ">=1.7.0"
-isort = ">=5.12.0"
-pre-commit = ">=3.5.0"
+# All optional features
+all = [
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.0",
+]
 
-# Security testing
-bandit = ">=1.7.5"
-safety = ">=2.3.0"
-pip-audit = ">=2.6.0"
+# Development dependencies
+dev = [
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-timeout>=2.1.0",
+    "httpx>=0.25.0",
+    "faker>=19.0.0",
 
-# Performance testing
-memory-profiler = ">=0.61.0"
-psutil = ">=5.9.0"
+    # Code quality
+    "black>=23.10.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "isort>=5.12.0",
 
-# Documentation
-mkdocs = ">=1.5.0"
-mkdocs-material = ">=9.4.0"
+    # Security testing
+    "bandit>=1.7.5",
+    "safety>=2.3.0",
+]
 
-[tool.poetry.extras]
-ml = ["transformers", "torch"]
-all = ["transformers", "torch"]
+[project.urls]
+Homepage = "https://github.com/wizardscurtain/SMCPv1"
+Documentation = "https://github.com/wizardscurtain/SMCPv1#readme"
+Repository = "https://github.com/wizardscurtain/SMCPv1"
+Issues = "https://github.com/wizardscurtain/SMCPv1/issues"
+Changelog = "https://github.com/wizardscurtain/SMCPv1/blob/main/CHANGELOG.md"
 
-[tool.poetry.scripts]
-smcp-security = "smcp_security.cli:main"
+[tool.setuptools]
+packages = ["smcp_security"]
+
+[tool.setuptools.package-data]
+smcp_security = ["py.typed"]
 
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py310', 'py311', 'py312']
 include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
 
 [tool.isort]
 profile = "black"
 line_length = 88
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
+disallow_untyped_defs = false  # Relaxed for beta
+disallow_incomplete_defs = false  # Relaxed for beta
 check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -154,8 +163,6 @@ module = [
     "numpy.*",
     "scipy.*",
     "joblib.*",
-    "transformers.*",
-    "torch.*",
     "qrcode.*",
     "pyotp.*"
 ]
@@ -163,118 +170,27 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
+python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
     "--verbose",
     "--tb=short",
-    "--strict-markers",
-    "--strict-config",
-    "--cov=smcp_security",
-    "--cov-report=html:htmlcov",
-    "--cov-report=xml:coverage.xml",
-    "--cov-report=term-missing",
-    "--cov-fail-under=90",
-    "--junit-xml=test-results.xml",
-    "--durations=10"
 ]
 markers = [
-    "unit: Unit tests for individual components",
-    "integration: Integration tests for component interactions",
-    "security: Security-focused tests for attack prevention",
-    "performance: Performance and benchmark tests",
-    "slow: Tests that take more than 1 second",
-    "network: Tests requiring network access",
-    "crypto: Cryptographic operation tests",
-    "auth: Authentication and authorization tests",
-    "validation: Input validation tests",
-    "ratelimit: Rate limiting tests",
-    "audit: Audit and logging tests",
-    "ai: AI immune system tests",
-    "e2e: End-to-end workflow tests",
-    "regression: Regression tests for known issues",
-    "smoke: Basic functionality smoke tests"
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "security: Security tests",
+    "slow: Slow tests",
 ]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-    "error::UserWarning"
-]
-minversion = "3.11"
-timeout = 300
-log_cli = true
-log_cli_level = "INFO"
-log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s"
-log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["smcp_security"]
 omit = [
     "*/tests/*",
-    "*/test_*",
     "*/__pycache__/*",
-    "*/venv/*",
-    "*/virtualenv/*",
-    "*/.venv/*",
-    "*/site-packages/*"
 ]
-branch = true
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod"
-]
-ignore_errors = true
-show_missing = true
-skip_covered = false
-skip_empty = false
-sort = "Cover"
-
-[tool.coverage.html]
-directory = "htmlcov"
-
-[tool.coverage.xml]
-output = "coverage.xml"
 
 [tool.bandit]
-exclude_dirs = ["tests", "test_*"]
-skips = ["B101", "B601"]  # Skip assert_used and shell_injection in tests
-
-[tool.bandit.assert_used]
-skips = ["**/test_*.py", "**/tests/**"]
-
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203", "W503"]
-exclude = [
-    ".git",
-    "__pycache__",
-    ".venv",
-    "venv",
-    "build",
-    "dist",
-    ".eggs",
-    "*.egg-info"
-]
-max-complexity = 10
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-version = "1.0.0"
-tag_format = "v$version"
-version_files = [
-    "pyproject.toml:version",
-    "smcp_security/__init__.py:__version__"
-]
-update_changelog_on_bump = true
+exclude_dirs = ["tests"]

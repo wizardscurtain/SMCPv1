@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+include requirements.txt
+recursive-include smcp_security *.py
+recursive-include examples *.py
+exclude tests/*
+exclude *.pyc
+exclude __pycache__
