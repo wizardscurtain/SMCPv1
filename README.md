@@ -11,7 +11,7 @@
 
 A comprehensive, production-ready security framework for Model Context Protocol (MCP) implementations. SMCPv1 provides multi-layered security, AI-immune threat detection, and seamless integration across multiple programming languages.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Choose Your Language
 
@@ -94,7 +94,7 @@ var validatedRequest = await security.ValidateRequestAsync(request);
 4. Click Install
 5. Right-click project folder → "Initialize SMCP Security"
 
-## 🛡️ Security Features
+## Security Features
 
 ### Multi-Layered Defense
 - **Input Validation**: Command injection, XSS, path traversal prevention
@@ -119,7 +119,7 @@ var validatedRequest = await security.ValidateRequestAsync(request);
 - **Horizontally Scalable**: Cloud-native architecture
 - **Framework Agnostic**: Works with any MCP implementation
 
-## 📚 Libraries & Integration
+## Libraries & Integration
 
 ### Core Libraries
 
@@ -176,7 +176,7 @@ var validatedRequest = await security.ValidateRequestAsync(request);
 - ✅ Blazor
 - ✅ gRPC
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TB
@@ -239,7 +239,7 @@ graph TB
    - Real-time monitoring
    - Forensic analysis
 
-## 🔧 Configuration
+## Configuration
 
 ### Basic Configuration
 
@@ -313,7 +313,7 @@ graph TB
 }
 ```
 
-## 📊 Monitoring & Analytics
+## Monitoring & Analytics
 
 ### Security Metrics
 
@@ -340,7 +340,7 @@ print(f"Average response time: {metrics.average_response_time}ms")
 - **Splunk**: SIEM integration
 - **DataDog**: APM integration
 
-## 🧪 Testing & Validation
+## Testing & Validation
 
 ### Security Testing
 
@@ -375,7 +375,7 @@ python -m smcp_security.testing.vuln_scan
 python -m smcp_security.testing.dep_check
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Docker
 
@@ -432,7 +432,7 @@ spec:
 - **Azure**: Container Instances, AKS support
 - **Render**: Native deployment support
 
-## 📖 Documentation
+## Documentation
 
 ### Getting Started
 - [Installation Guide](docs/installation.md)
@@ -458,7 +458,7 @@ spec:
 - [Advanced Configurations](examples/advanced/)
 - [Production Deployments](examples/production/)
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
@@ -495,7 +495,7 @@ cd SMCPv1
 ./scripts/publish-vscode.sh
 ```
 
-## 🔒 Security
+## Security
 
 ### Reporting Security Issues
 
@@ -515,30 +515,30 @@ For security issues, please email **security@smcp.dev** instead of using the iss
 - **HIPAA**: Healthcare ready
 - **PCI DSS**: Payment card industry compliant
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Model Context Protocol](https://github.com/modelcontextprotocol) team for the foundational protocol
 - Security researchers and contributors
 - Open source community for libraries and tools
 
-## 📞 Support
+## Support
 
-- 📧 **Email**: support@smcp.dev
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/wizardscurtain/SMCPv1/discussions)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/wizardscurtain/SMCPv1/issues)
-- 📖 **Documentation**: [docs.smcp.dev](https://docs.smcp.dev)
-- 🌐 **Website**: [smcp.dev](https://smcp.dev)
+ **Email**: support@smcp.dev
+ **Discussions**: [GitHub Discussions](https://github.com/wizardscurtain/SMCPv1/discussions)
+ **Issues**: [GitHub Issues](https://github.com/wizardscurtain/SMCPv1/issues)
+ **Documentation**: [docs.smcp.dev](https://docs.smcp.dev)
+ **Website**: [smcp.dev](https://smcp.dev)
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by the SMCP Security Team**
+**Made with ❤️ by the Aevom Labs Team**
 
-[⭐ Star us on GitHub](https://github.com/wizardscurtain/SMCPv1) • [🐦 Follow on Twitter](https://twitter.com/smcp_security) • [💼 LinkedIn](https://linkedin.com/company/smcp-security)
+[⭐ Star us on GitHub](https://github.com/wizardscurtain/SMCPv1)
 
 </div>
