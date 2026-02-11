@@ -28,29 +28,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check PYPI token
-        if: ${{ secrets.PYPI_API_TOKEN != '' }}
-        run: echo "PYPI_API_TOKEN is set"
-
-      - name: Check TEST PYPI token
-        if: ${{ secrets.TEST_PYPI_API_TOKEN != '' }}
-        run: echo "TEST_PYPI_API_TOKEN is set"
-
-      - name: Check NPM token
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        run: echo "NPM_TOKEN is set"
-
-      - name: Check crates.io token
-        if: ${{ secrets.CRATES_IO_TOKEN != '' }}
-        run: echo "CRATES_IO_TOKEN is set"
-
-      - name: Check Maven credentials
-        if: ${{ secrets.MAVEN_USERNAME != '' && secrets.MAVEN_PASSWORD != '' }}
-        run: echo "MAVEN credentials are set"
-
-      - name: Check NuGet token
-        if: ${{ secrets.NUGET_API_KEY != '' }}
-        run: echo "NUGET_API_KEY is set"
+      - name: Verify registry tokens (runtime check)
+        run: |
+          if [ -n "${{ secrets.PYPI_API_TOKEN }}" ]; then echo "PYPI_API_TOKEN is set"; else echo "PYPI_API_TOKEN not set"; fi
+          if [ -n "${{ secrets.TEST_PYPI_API_TOKEN }}" ]; then echo "TEST_PYPI_API_TOKEN is set"; else echo "TEST_PYPI_API_TOKEN not set"; fi
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then echo "NPM_TOKEN is set"; else echo "NPM_TOKEN not set"; fi
+          if [ -n "${{ secrets.CRATES_IO_TOKEN }}" ]; then echo "CRATES_IO_TOKEN is set"; else echo "CRATES_IO_TOKEN not set"; fi
+          if [ -n "${{ secrets.MAVEN_USERNAME }}" ] && [ -n "${{ secrets.MAVEN_PASSWORD }}" ]; then echo "MAVEN credentials are set"; else echo "MAVEN credentials not set"; fi
+          if [ -n "${{ secrets.NUGET_API_KEY }}" ]; then echo "NUGET_API_KEY is set"; else echo "NUGET_API_KEY not set"; fi
 
       - name: Prepare npm auth
         if: env.NPM_TOKEN != ''
