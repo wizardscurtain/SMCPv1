@@ -25,7 +25,21 @@ jobs:
 
       - name: Show version
         run: |
-          python -c "import tomllib, pathlib; d=tomllib.load(open('libraries/python/pyproject.toml','rb')); print('Will publish', d['project']['name'], d['project']['version'])"
+          python - <<'PY'
+          import tomllib, pathlib, sys
+          p = pathlib.Path('libraries/python/pyproject.toml')
+          d = tomllib.load(open(p,'rb'))
+          if 'project' in d:
+              name = d['project'].get('name')
+              version = d['project'].get('version')
+          elif 'tool' in d and 'poetry' in d['tool']:
+              name = d['tool']['poetry'].get('name')
+              version = d['tool']['poetry'].get('version')
+          else:
+              print('Unable to determine package name/version from pyproject', file=sys.stderr)
+              sys.exit(1)
+          print('Will publish', name, version)
+          PY
 
       - name: Publish to PyPI
         env:
