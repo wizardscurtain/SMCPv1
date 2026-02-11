@@ -9,6 +9,14 @@
 [![C#](https://img.shields.io/nuget/v/SMCP.Security.svg)](https://www.nuget.org/packages/SMCP.Security/)
 [![VS Code](https://img.shields.io/visual-studio-marketplace/v/smcp-security.smcp-security.svg)](https://marketplace.visualstudio.com/items?itemName=smcp-security.smcp-security)
 
+<!-- CI status badges -->
+[![CI - Python](https://github.com/wizardscurtain/SMCPv1/actions/workflows/python-ci.yml/badge.svg?branch=main)](https://github.com/wizardscurtain/SMCPv1/actions/workflows/python-ci.yml)
+[![CI - Node.js](https://github.com/wizardscurtain/SMCPv1/actions/workflows/nodejs-ci.yml/badge.svg?branch=main)](https://github.com/wizardscurtain/SMCPv1/actions/workflows/nodejs-ci.yml)
+[![CI - Java](https://github.com/wizardscurtain/SMCPv1/actions/workflows/java-ci.yml/badge.svg?branch=main)](https://github.com/wizardscurtain/SMCPv1/actions/workflows/java-ci.yml)
+[![CI - Go](https://github.com/wizardscurtain/SMCPv1/actions/workflows/go-ci.yml/badge.svg?branch=main)](https://github.com/wizardscurtain/SMCPv1/actions/workflows/go-ci.yml)
+[![CI - Rust](https://github.com/wizardscurtain/SMCPv1/actions/workflows/rust-ci.yml/badge.svg?branch=main)](https://github.com/wizardscurtain/SMCPv1/actions/workflows/rust-ci.yml)
+
+
 A comprehensive, production-ready security framework for Model Context Protocol (MCP) implementations. SMCPv1 provides multi-layered security, AI-immune threat detection, and seamless integration across multiple programming languages.
 
 ## Quick Start

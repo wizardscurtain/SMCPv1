@@ -1,0 +1,63 @@
+name: Publish All Libraries (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      libraries:
+        description: 'Comma-separated libraries to publish (default: all)'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry run (do not publish)'
+        required: false
+        default: 'true'
+      skip_tests:
+        description: 'Skip tests before publishing'
+        required: false
+        default: 'false'
+
+jobs:
+  publish-all:
+    runs-on: ubuntu-latest
+    env:
+      PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify registry tokens
+        run: |
+          echo "PYPI_API_TOKEN=${{ secrets.PYPI_API_TOKEN:+'set'}}"
+          echo "TEST_PYPI_API_TOKEN=${{ secrets.TEST_PYPI_API_TOKEN:+'set'}}"
+          echo "NPM_TOKEN=${{ secrets.NPM_TOKEN:+'set'}}"
+          echo "CRATES_IO_TOKEN=${{ secrets.CRATES_IO_TOKEN:+'set'}}"
+          echo "MAVEN_USERNAME=${{ secrets.MAVEN_USERNAME:+'set'}}"
+          echo "NUGET_API_KEY=${{ secrets.NUGET_API_KEY:+'set'}}"
+
+      - name: Prepare npm auth
+        if: env.NPM_TOKEN != ''
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+
+      - name: Prepare cargo auth
+        if: env.CRATES_IO_TOKEN != ''
+        run: |
+          mkdir -p ~/.cargo
+          echo "[registries.crates-io]" > ~/.cargo/credentials || true
+          # Many workflows expect CRATES_IO_TOKEN env var during cargo publish
+
+      - name: Run publish script
+        run: |
+          chmod +x ./scripts/publish-all.sh
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ./scripts/publish-all.sh --dry-run --libraries "${{ github.event.inputs.libraries }}"
+          else
+            SKIP=""
+            if [ "${{ github.event.inputs.skip_tests }}" = "true" ]; then
+              SKIP="--skip-tests"
+            fi
+            ./scripts/publish-all.sh --libraries "${{ github.event.inputs.libraries }}" $SKIP
+          fi
