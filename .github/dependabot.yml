@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/libraries/python"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  - package-ecosystem: "npm"
+    directory: "/libraries/nodejs"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "cargo"
+    directory: "/libraries/rust"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "maven"
+    directory: "/libraries/java"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "nuget"
+    directory: "/libraries/csharp"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

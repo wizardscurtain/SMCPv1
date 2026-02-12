@@ -1,0 +1,14 @@
+# CODEOWNERS for SMCPv1
+# NOTE: Replace these owners with your GitHub org/team names as appropriate.
+# The repository owner is added as a default reviewer for all changes.
+* @wizardscurtain
+
+# Owners for critical paths
+/.github/ @wizardscurtain
+/code/ @wizardscurtain
+/libraries/python/ @wizardscurtain
+/libraries/nodejs/ @wizardscurtain
+/libraries/go/ @wizardscurtain
+/libraries/java/ @wizardscurtain
+/libraries/rust/ @wizardscurtain
+/libraries/csharp/ @wizardscurtain

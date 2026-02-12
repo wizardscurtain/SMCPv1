@@ -1,0 +1,113 @@
+name: Automated Release (Commitizen)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Release type (patch, minor, major) - optional manual override'
+        required: false
+        default: 'patch'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r code/requirements-test.txt
+          pip install -e ./code
+
+      - name: Run tests
+        working-directory: code
+        run: |
+          pytest -v --junit-xml=test-results.xml --cov=smcp_security --cov-report=xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: code/test-results.xml
+
+  bump-and-release:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install commitizen build twine
+
+      - name: Bump version, create tag and push
+        id: bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Use Commitizen to bump based on conventional commits (auto) or manual input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            cz bump --yes --what=${{ github.event.inputs.bump }} || true
+          else
+            cz bump --yes || true
+          fi
+          # Ensure tags are present
+          git fetch --tags
+          NEW_TAG=$(git describe --tags --abbrev=0)
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          # Push commits and tags
+          git push origin HEAD
+          git push origin --tags
+
+      - name: Create GitHub Release (draft)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.bump.outputs.tag }}
+          name: ${{ steps.bump.outputs.tag }}
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "$TWINE_PASSWORD" ]; then
+            echo "PYPI token not provided; skipping publish"
+            exit 0
+          fi
+          pushd libraries/python
+          python -m pip install --upgrade pip
+          pip install build twine
+          rm -rf build dist *.egg-info
+          python -m build
+          twine check dist/*
+          twine upload --non-interactive --username "$TWINE_USERNAME" --password "$TWINE_PASSWORD" dist/*
+          popd

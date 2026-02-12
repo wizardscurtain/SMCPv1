@@ -1,0 +1,32 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libraries", "libraries", "{F2E35B3E-9711-EDEC-6202-DB40BDEED14A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csharp", "csharp", "{EBC89E5E-E8A9-9568-694B-E69D79BE83B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SMCP.Security", "libraries\csharp\SMCP.Security.csproj", "{9AD52534-7132-859A-8B70-4272ACDF79DB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9AD52534-7132-859A-8B70-4272ACDF79DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AD52534-7132-859A-8B70-4272ACDF79DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AD52534-7132-859A-8B70-4272ACDF79DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AD52534-7132-859A-8B70-4272ACDF79DB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EBC89E5E-E8A9-9568-694B-E69D79BE83B2} = {F2E35B3E-9711-EDEC-6202-DB40BDEED14A}
+		{9AD52534-7132-859A-8B70-4272ACDF79DB} = {EBC89E5E-E8A9-9568-694B-E69D79BE83B2}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2B9857A8-D3A2-487F-AA95-EE1D862229BF}
+	EndGlobalSection
+EndGlobal
