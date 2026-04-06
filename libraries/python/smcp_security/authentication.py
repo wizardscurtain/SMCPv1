@@ -21,10 +21,60 @@ from .exceptions import AuthenticationError
 
 
 @dataclass
+class TLSConfig:
+    """TLS/mTLS configuration for SMCP transport security.
+    
+    For CNSA 2.0 alignment, use P-384 curves with TLS 1.3.
+    SMCP mandates TLS 1.3 minimum; TLS 1.2 is permitted only in
+    legacy-compatibility mode with explicit acknowledgment.
+    """
+    enabled: bool = True
+    verify_client: bool = True  # mTLS — require client cert
+    ca_cert_path: str | None = None
+    server_cert_path: str | None = None
+    server_key_path: str | None = None
+    client_cert_path: str | None = None
+    client_key_path: str | None = None
+    min_tls_version: str = "TLSv1.3"
+    allowed_ciphers: list = None  # None = use system defaults (TLS 1.3 suites)
+    legacy_compat: bool = False  # Allow TLS 1.2 — requires explicit opt-in
+    
+    def __post_init__(self):
+        if self.allowed_ciphers is None:
+            # TLS 1.3 cipher suites (CNSA 2.0 aligned)
+            self.allowed_ciphers = [
+                "TLS_AES_256_GCM_SHA384",
+                "TLS_CHACHA20_POLY1305_SHA256",
+            ]
+    
+    def to_ssl_context(self):
+        """Create an ssl.SSLContext from this config."""
+        import ssl
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+        if not self.legacy_compat:
+            ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+        if self.ca_cert_path:
+            ctx.load_verify_locations(self.ca_cert_path)
+        if self.server_cert_path and self.server_key_path:
+            ctx.load_cert_chain(self.server_cert_path, self.server_key_path)
+        if self.verify_client:
+            ctx.verify_mode = ssl.CERT_REQUIRED
+        return ctx
+
+
+@dataclass
 class AuthenticationConfig:
-    """Configuration for authentication system"""
+    """Configuration for authentication system.
+    
+    Warning: ``jwt_algorithm`` defaults to ``HS256``, which is suitable only
+    for single-server deployments where the signing and verification key are
+    on the same host.  For distributed systems, set ``preferred_algorithm``
+    (or ``jwt_algorithm``) to ``ES384`` and supply an EC P-384 key pair.
+    """
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
+    preferred_algorithm: str = "ES384"  # Recommended for distributed systems
     jwt_expiry_seconds: int = 3600
     session_timeout_seconds: int = 7200
     max_failed_attempts: int = 5
@@ -129,6 +179,7 @@ class JWTAuthenticator:
                 token,
                 self.config.jwt_secret_key,
                 algorithms=[self.config.jwt_algorithm],
+                audience='smcp-client',
                 options={"verify_exp": False}  # Allow expired tokens for revocation
             )
             token_id = payload.get('jti')
@@ -219,7 +270,9 @@ class MFAManager:
     """Multi-Factor Authentication Manager"""
     
     def __init__(self, config: AuthenticationConfig = None):
-        self.config = config or AuthenticationConfig(jwt_secret_key="demo")
+        self.config = config or AuthenticationConfig(
+            jwt_secret_key=secrets.token_urlsafe(32)
+        )
         self.user_secrets = {}  # In production, store in secure database
         self.pending_verifications = {}  # Temporary codes for SMS/Email
     
@@ -300,10 +353,12 @@ class MFAManager:
         Returns:
             List of backup codes
         """
+        import string
+        alphabet = string.ascii_uppercase
         codes = []
         for _ in range(count):
-            # Generate 8-character alphanumeric code
-            code = secrets.token_hex(4).upper()
+            # Generate 8-character uppercase alphabetic code
+            code = ''.join(secrets.choice(alphabet) for _ in range(8))
             codes.append(code)
         
         # Store hashed versions
@@ -456,7 +511,9 @@ class SessionManager:
     """Manages user sessions and session security"""
     
     def __init__(self, config: AuthenticationConfig = None):
-        self.config = config or AuthenticationConfig(jwt_secret_key="demo")
+        self.config = config or AuthenticationConfig(
+            jwt_secret_key=secrets.token_urlsafe(32)
+        )
         self.active_sessions = {}  # In production, use Redis
     
     def create_session(self, user_id: str, ip_address: str = None, 

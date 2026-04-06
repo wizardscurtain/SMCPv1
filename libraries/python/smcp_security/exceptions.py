@@ -16,7 +16,7 @@ class AuthenticationError(SMCPSecurityError):
     """Authentication failure"""
     pass
 
-class AuthorizationError(SMCPSecurityError):
+class AuthorizationError(SecurityError):
     """Authorization failure"""
     pass
 

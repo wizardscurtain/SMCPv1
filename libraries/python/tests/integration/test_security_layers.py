@@ -25,6 +25,7 @@ class TestSecurityLayerIntegration:
             enable_rbac=True,
             enable_rate_limiting=True,
             default_rate_limit=10,
+            adaptive_limits=False,  # Disable adaptive limits for deterministic tests
             enable_encryption=True,
             enable_ai_immune=True,
             anomaly_threshold=0.8,
