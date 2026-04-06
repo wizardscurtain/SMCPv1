@@ -325,11 +325,14 @@ class PromptInjectionDetector:
         self.injection_patterns = [
             r'ignore\s+(all\s+)?(previous|prior|above)\s+instructions',
             r'forget\s+(everything|all)\s+(above|previous|prior)',
-            r'disregard\s+(the\s+)?(above|previous|prior)',
+            r'disregard\s+(the\s+)?(above|previous|prior)\s+(instructions|guidelines|rules|settings|constraints|prompt|system)',
             r'you\s+are\s+now\s+in\s+\w+\s+mode',
             r'(switch|activate|enable)\s+(to\s+)?\w+\s+mode',
             r'(admin|developer|debug|god|root|dan)\s+mode',
             r'disregard\s+all\s+\w+\s+(measures|protocols|rules|guidelines)',  # DAN-style: disregard all safety measures
+            r'disregard\s+all\s+(rules|guidelines)(\s+and)?',  # DAN-style: disregard all rules/guidelines
+            r'\b(enable|activate)\s+dan\b',  # DAN jailbreak enable command
+            r'\bdan\b.*\bdo\s+anything\s+now\b',  # do anything now DAN phrase
             r'emergency\s+override',
             r'\[SYSTEM\].*?\[/SYSTEM\]',
             r'(reveal|show|display|tell\s+me)\s+(your\s+)?(system\s+)?(prompt|configuration|instructions|internal)',
