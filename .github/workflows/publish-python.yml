@@ -1,0 +1,44 @@
+name: Publish Python → PyPI
+
+# Triggers on a version tag pushed manually: git tag v1.0.1 && git push --tags
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"   # pre-releases: v1.0.0-beta.1
+
+jobs:
+  publish:
+    name: "Build & publish smcp-security to PyPI"
+    runs-on: ubuntu-latest
+    environment: pypi          # requires a GitHub Environment named "pypi"
+    permissions:
+      id-token: write          # required for OIDC trusted publishing
+      contents: read
+
+    defaults:
+      run:
+        working-directory: libraries/python
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build wheel + sdist
+        run: python -m build
+
+      - name: Check distribution
+        run: twine check dist/*
+
+      # Uses PyPI Trusted Publishing (OIDC) — no API token needed in secrets.
+      # Set this up at: https://pypi.org/manage/account/publishing/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: libraries/python/dist/

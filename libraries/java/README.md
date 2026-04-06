@@ -1,5 +1,13 @@
 # SMCP Security - Java Library
 
+> **Status: Planned — not yet implemented.**
+>
+> The API design and package manifest below show the intended interface for this language binding.
+> The Python library ([`libraries/python`](../python)) is the reference implementation and the only
+> fully-working version today. Contributions welcome — see
+> [CONTRIBUTING.md](../../CONTRIBUTING.md) to help build this out.
+
+---
 [![Maven Central](https://img.shields.io/maven-central/v/com.smcp/smcp-security.svg)](https://search.maven.org/artifact/com.smcp/smcp-security)
 [![Java Version](https://img.shields.io/badge/Java-11%2B-blue.svg)](https://openjdk.java.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

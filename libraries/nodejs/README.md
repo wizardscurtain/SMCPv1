@@ -1,5 +1,13 @@
 # SMCP Security - Node.js/TypeScript Library
 
+> **Status: Planned — not yet implemented.**
+>
+> The API design and package manifest below show the intended interface for this language binding.
+> The Python library ([`libraries/python`](../python)) is the reference implementation and the only
+> fully-working version today. Contributions welcome — see
+> [CONTRIBUTING.md](../../CONTRIBUTING.md) to help build this out.
+
+---
 [![npm version](https://badge.fury.io/js/smcp-security.svg)](https://badge.fury.io/js/smcp-security)
 [![Node.js Support](https://img.shields.io/node/v/smcp-security.svg)](https://www.npmjs.com/package/smcp-security)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)

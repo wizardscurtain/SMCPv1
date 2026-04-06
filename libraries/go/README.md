@@ -1,5 +1,13 @@
 # SMCP Security - Go Library
 
+> **Status: Planned — not yet implemented.**
+>
+> The API design and package manifest below show the intended interface for this language binding.
+> The Python library ([`libraries/python`](../python)) is the reference implementation and the only
+> fully-working version today. Contributions welcome — see
+> [CONTRIBUTING.md](../../CONTRIBUTING.md) to help build this out.
+
+---
 [![Go Reference](https://pkg.go.dev/badge/github.com/wizardscurtain/SMCPv1/libraries/go.svg)](https://pkg.go.dev/github.com/wizardscurtain/SMCPv1/libraries/go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/wizardscurtain/SMCPv1/libraries/go)](https://goreportcard.com/report/github.com/wizardscurtain/SMCPv1/libraries/go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

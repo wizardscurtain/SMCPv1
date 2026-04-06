@@ -1,5 +1,13 @@
 # SMCP Security - Rust Library
 
+> **Status: Planned — not yet implemented.**
+>
+> The API design and package manifest below show the intended interface for this language binding.
+> The Python library ([`libraries/python`](../python)) is the reference implementation and the only
+> fully-working version today. Contributions welcome — see
+> [CONTRIBUTING.md](../../CONTRIBUTING.md) to help build this out.
+
+---
 [![Crates.io](https://img.shields.io/crates/v/smcp-security.svg)](https://crates.io/crates/smcp-security)
 [![Documentation](https://docs.rs/smcp-security/badge.svg)](https://docs.rs/smcp-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
