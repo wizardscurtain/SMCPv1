@@ -88,6 +88,26 @@ export class InputValidator {
           `Prompt injection detected with risk score: ${injectionResult.riskScore}`
         );
       }
+      // Also check base64-decoded variants of each token.
+      // Attackers may encode injection payloads as base64 to bypass string matching.
+      for (const token of textContent.split(/\s+/)) {
+        if (/^[A-Za-z0-9+/]{8,}={0,2}$/.test(token.trim())) {
+          try {
+            const decoded = Buffer.from(token.trim(), 'base64').toString('utf-8');
+            if (decoded && decoded !== token) {
+              const decodedResult = this.promptInjection.detectInjection(decoded);
+              if (decodedResult.isInjection) {
+                throw new ValidationError(
+                  `Prompt injection detected in base64-encoded content with risk score: ${decodedResult.riskScore}`
+                );
+              }
+            }
+          } catch (e) {
+            if (e instanceof ValidationError) throw e; // Re-raise
+            // Ignore decoding errors
+          }
+        }
+      }
     }
 
     // Stage 5: Sanitization

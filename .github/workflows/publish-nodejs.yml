@@ -1,0 +1,74 @@
+# Publish Node.js → npm
+#
+# SETUP INSTRUCTIONS:
+#   1. Go to https://www.npmjs.com → Account → Access Tokens → Generate New Token
+#      → choose "Automation" (granular token, CI-safe, bypasses 2FA)
+#   2. Add the token as a repository secret:
+#      GitHub repo → Settings → Secrets and variables → Actions → New repository secret
+#      Name: NPM_TOKEN   Value: <your automation token>
+#   3. Create a GitHub Environment named "npm":
+#      GitHub repo → Settings → Environments → New environment → name it "npm"
+#      (Optionally add required reviewers or branch protection rules here)
+#
+# HOW TO PUBLISH:
+#   git tag v1.0.0 && git push origin v1.0.0
+#
+# PROVENANCE:
+#   `npm publish --provenance` generates a signed SLSA Build Level 2 attestation
+#   linked to this workflow run, visible on the npm package page under "Provenance".
+#   This requires `id-token: write` permission so the runner can request an OIDC token
+#   from GitHub's identity provider.
+
+name: Publish Node.js → npm
+
+# Triggers on a version tag pushed manually: git tag v1.0.0 && git push --tags
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"   # pre-releases: v1.0.0-beta.1
+
+jobs:
+  publish:
+    name: "Build & publish smcp-security to npm"
+    runs-on: ubuntu-latest
+    environment: npm          # requires a GitHub Environment named "npm"
+    permissions:
+      id-token: write          # required for npm provenance attestation
+      contents: read
+
+    defaults:
+      run:
+        working-directory: libraries/nodejs
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript → dist/
+        run: npm run build
+
+      - name: Run tests
+        run: npm test -- --no-coverage
+
+      - name: Verify tag matches package.json version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Tag $TAG_VERSION does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+          echo "Version check passed: $PKG_VERSION"
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

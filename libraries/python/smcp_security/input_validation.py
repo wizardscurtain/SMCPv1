@@ -328,7 +328,8 @@ class PromptInjectionDetector:
             r'disregard\s+(the\s+)?(above|previous|prior)',
             r'you\s+are\s+now\s+in\s+\w+\s+mode',
             r'(switch|activate|enable)\s+(to\s+)?\w+\s+mode',
-            r'(admin|developer|debug|god|root)\s+mode',
+            r'(admin|developer|debug|god|root|dan)\s+mode',
+            r'disregard\s+all\s+\w+\s+(measures|protocols|rules|guidelines)',  # DAN-style: disregard all safety measures
             r'emergency\s+override',
             r'\[SYSTEM\].*?\[/SYSTEM\]',
             r'(reveal|show|display|tell\s+me)\s+(your\s+)?(system\s+)?(prompt|configuration|instructions|internal)',
@@ -521,6 +522,23 @@ class InputValidator:
                 raise ValidationError(
                     f"Prompt injection detected with risk score: {injection_result['risk_score']}"
                 )
+            # Also check base64-decoded variants of each token in the extracted text.
+            # Attackers may encode injection payloads as base64 to bypass string matching.
+            for token in text_content.split():
+                if re.match(r'^[A-Za-z0-9+/]{8,}={0,2}$', token.strip()):
+                    try:
+                        decoded = base64.b64decode(token + '==').decode('utf-8', errors='ignore')
+                        if decoded and decoded != token:
+                            decoded_result = self.prompt_injection_detector.detect_injection(decoded)
+                            if decoded_result['is_injection']:
+                                raise ValidationError(
+                                    f"Prompt injection detected in base64-encoded content with risk score: "
+                                    f"{decoded_result['risk_score']}"
+                                )
+                    except ValidationError:
+                        raise  # Re-raise ValidationError
+                    except Exception:
+                        pass  # Ignore decoding errors
         
         # Stage 5: Sanitization
         sanitized_request = self.command_injection_prevention.sanitize_input(request_data)
