@@ -79,7 +79,8 @@ class TestJWTAuthenticator:
         payload = jwt.decode(
             token, 
             authenticator.config.jwt_secret_key, 
-            algorithms=[authenticator.config.jwt_algorithm]
+            algorithms=[authenticator.config.jwt_algorithm],
+            audience="smcp-client"
         )
         
         assert payload["user_id"] == "test_user"

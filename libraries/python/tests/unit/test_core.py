@@ -232,7 +232,7 @@ class TestSMCPSecurityFramework:
             mock_rbac.return_value = True
             mock_rbac.side_effect = lambda *args: (processing_order.append('rbac'), True)[1]
             mock_rate.return_value = True
-            mock_rate.side_effect = lambda x: (processing_order.append('rate'), True)[1]
+            mock_rate.side_effect = lambda *args: (processing_order.append('rate'), True)[1]
             mock_ai.return_value = {"overall_risk_score": 0.1, "recommendation": "allow"}
             mock_ai.side_effect = lambda *args: (processing_order.append('ai'), mock_ai.return_value)[1]
             
@@ -460,8 +460,10 @@ class TestSMCPSecurityFramework:
     @pytest.mark.unit
     def test_configuration_validation_on_update(self, security_framework):
         """Test configuration validation when updating."""
-        # Test invalid configuration
-        invalid_config = SecurityConfig(validation_strictness="invalid")
+        # Create a config object and then corrupt its strictness after construction
+        # to simulate an invalid configuration being passed to update_configuration.
+        invalid_config = SecurityConfig()  # Valid at construction
+        invalid_config.validation_strictness = "invalid"  # Corrupt after init
         
         with pytest.raises(ValueError):
             security_framework.update_configuration(invalid_config)

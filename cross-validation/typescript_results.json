@@ -1,0 +1,232 @@
+[
+  {
+    "id": "pi-01",
+    "category": "prompt_injection",
+    "description": "Classic ignore-previous-instructions injection",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Prompt injection detected with risk score: 0.9"
+  },
+  {
+    "id": "pi-02",
+    "category": "prompt_injection",
+    "description": "Role override to admin mode",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Prompt injection detected with risk score: 0.85"
+  },
+  {
+    "id": "pi-03",
+    "category": "prompt_injection",
+    "description": "DAN jailbreak attempt",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Prompt injection detected with risk score: 0.85"
+  },
+  {
+    "id": "pi-04",
+    "category": "prompt_injection",
+    "description": "Nested injection in metadata field",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Prompt injection detected with risk score: 0.85"
+  },
+  {
+    "id": "pi-05",
+    "category": "prompt_injection",
+    "description": "Base64-encoded injection (Ignore previous instructions)",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Prompt injection detected in base64-encoded content with risk score: 0.75"
+  },
+  {
+    "id": "pi-06",
+    "category": "prompt_injection",
+    "description": "Unicode obfuscation of ignore-instructions",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Prompt injection detected with risk score: 0.75"
+  },
+  {
+    "id": "sh-01",
+    "category": "shell_metacharacters",
+    "description": "Command substitution with $()",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: shell_metacharacters - Shell command-injection constructs (subshell / variable expansion)"
+  },
+  {
+    "id": "sh-02",
+    "category": "shell_metacharacters",
+    "description": "Variable expansion with ${}",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: shell_metacharacters - Shell command-injection constructs (subshell / variable expansion)"
+  },
+  {
+    "id": "sh-03",
+    "category": "shell_metacharacters",
+    "description": "Backtick command execution",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: shell_metacharacters - Shell command-injection constructs (subshell / variable expansion)"
+  },
+  {
+    "id": "sh-04",
+    "category": "shell_metacharacters",
+    "description": "AND chaining with dangerous command",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: shell_metacharacters - Shell command-injection constructs (subshell / variable expansion)"
+  },
+  {
+    "id": "sh-05",
+    "category": "shell_metacharacters",
+    "description": "OR chaining with dangerous command",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: shell_metacharacters - Shell command-injection constructs (subshell / variable expansion)"
+  },
+  {
+    "id": "sh-06",
+    "category": "shell_metacharacters",
+    "description": "Dangerous command: curl exfiltration",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: dangerous_commands - Dangerous system commands in tool invocation"
+  },
+  {
+    "id": "sh-07",
+    "category": "shell_metacharacters",
+    "description": "Path traversal to /etc/shadow",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: path_traversal - Path traversal patterns"
+  },
+  {
+    "id": "se-01",
+    "category": "shell_edge_cases",
+    "description": "Pipe character in user agent (should allow)",
+    "expected": "allow",
+    "actual": "allow",
+    "match": true,
+    "exception": null,
+    "message": ""
+  },
+  {
+    "id": "se-02",
+    "category": "shell_edge_cases",
+    "description": "Semicolon in prose text (should allow)",
+    "expected": "allow",
+    "actual": "allow",
+    "match": true,
+    "exception": null,
+    "message": ""
+  },
+  {
+    "id": "se-03",
+    "category": "shell_edge_cases",
+    "description": "Single ampersand in URL query string (should allow)",
+    "expected": "allow",
+    "actual": "allow",
+    "match": true,
+    "exception": null,
+    "message": ""
+  },
+  {
+    "id": "se-04",
+    "category": "shell_edge_cases",
+    "description": "Normal tools/list MCP request (should allow)",
+    "expected": "allow",
+    "actual": "allow",
+    "match": true,
+    "exception": null,
+    "message": ""
+  },
+  {
+    "id": "se-05",
+    "category": "shell_edge_cases",
+    "description": "Safe tools/call with calculator input (should allow)",
+    "expected": "allow",
+    "actual": "allow",
+    "match": true,
+    "exception": null,
+    "message": ""
+  },
+  {
+    "id": "sq-01",
+    "category": "sql_injection",
+    "description": "UNION SELECT SQL injection in database query",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: sql_injection - SQL injection patterns"
+  },
+  {
+    "id": "sq-02",
+    "category": "sql_injection",
+    "description": "DROP TABLE SQL injection",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Command injection detected: Dangerous pattern detected: sql_injection - SQL injection patterns"
+  },
+  {
+    "id": "mv-01",
+    "category": "schema_violation",
+    "description": "Missing jsonrpc field",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Schema validation failed: \"jsonrpc\" is required"
+  },
+  {
+    "id": "mv-02",
+    "category": "schema_violation",
+    "description": "Wrong jsonrpc version (1.0 instead of 2.0)",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Schema validation failed: \"jsonrpc\" must be [2.0]"
+  },
+  {
+    "id": "mv-03",
+    "category": "schema_violation",
+    "description": "Missing method field",
+    "expected": "block",
+    "actual": "block",
+    "match": true,
+    "exception": "ValidationError",
+    "message": "Schema validation failed: \"method\" is required"
+  }
+]

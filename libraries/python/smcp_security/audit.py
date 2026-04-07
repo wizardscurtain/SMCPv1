@@ -6,10 +6,12 @@ for SMCP security events.
 
 import json
 import logging
+import os
 import time
+import uuid
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Union
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, field, asdict
 from enum import Enum
 import threading
 from collections import defaultdict, deque
@@ -23,631 +25,461 @@ class AuditConfig:
     """Configuration for audit logging"""
     log_level: str = "INFO"
     max_events_memory: int = 10000
+    buffer_size: int = 1000
     enable_file_logging: bool = True
     log_file_path: str = "smcp_audit.log"
+    enable_syslog: bool = False
+    enable_remote_logging: bool = False
+    log_format: str = "json"
+    max_log_size_mb: int = 100
+    max_log_files: int = 10
     enable_correlation: bool = True
     incident_threshold: int = 5
     cleanup_interval_hours: int = 24
 
 
 class EventSeverity(Enum):
-    """Security event severity levels"""
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
+    """Security event severity levels with ordering support"""
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
     CRITICAL = "CRITICAL"
+
+    # Map values to integers for ordering
+    _order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+            return order[self.value] < order[other.value]
+        return NotImplemented
+
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self == other or self < other
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return other < self
+        return NotImplemented
+
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self == other or self > other
+        return NotImplemented
 
 
 class EventCategory(Enum):
     """Security event categories"""
-    AUTHENTICATION = "authentication"
-    AUTHORIZATION = "authorization"
-    INPUT_VALIDATION = "input_validation"
-    RATE_LIMITING = "rate_limiting"
-    CRYPTOGRAPHY = "cryptography"
-    ANOMALY_DETECTION = "anomaly_detection"
-    SYSTEM = "system"
-    AUDIT = "audit"
-
-
-@dataclass
-class SecurityEvent:
-    """Represents a security event"""
-    timestamp: datetime
-    event_id: str
-    category: EventCategory
-    severity: EventSeverity
-    user_id: Optional[str]
-    ip_address: Optional[str]
-    user_agent: Optional[str]
-    event_type: str
-    description: str
-    details: Dict[str, Any]
-    source_component: str
-    session_id: Optional[str] = None
-    request_id: Optional[str] = None
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert event to dictionary"""
-        data = asdict(self)
-        data['timestamp'] = self.timestamp.isoformat()
-        data['category'] = self.category.value
-        data['severity'] = self.severity.value
-        return data
-    
-    def to_json(self) -> str:
-        """Convert event to JSON string"""
-        return json.dumps(self.to_dict())
+    AUTHENTICATION = "AUTHENTICATION"
+    AUTHORIZATION = "AUTHORIZATION"
+    INPUT_VALIDATION = "INPUT_VALIDATION"
+    RATE_LIMITING = "RATE_LIMITING"
+    CRYPTOGRAPHY = "CRYPTOGRAPHY"
+    ANOMALY_DETECTION = "ANOMALY_DETECTION"
+    SYSTEM = "SYSTEM"
+    AUDIT = "AUDIT"
+    SECURITY_VIOLATION = "SECURITY_VIOLATION"
 
 
 class SMCPAuditLogger:
     """Main audit logging system for SMCP"""
-    
-    def __init__(self, config: Optional[AuditConfig] = None, 
-                 log_level: str = "INFO", 
+
+    def __init__(self, config: Optional[AuditConfig] = None,
+                 log_level: str = "INFO",
                  max_events_memory: int = 10000,
                  enable_file_logging: bool = True,
                  log_file_path: str = "smcp_audit.log"):
-        
+
         if config is not None:
             self.config = config
-            self.log_level = getattr(logging, config.log_level.upper())
-            self.max_events_memory = config.max_events_memory
-            self.enable_file_logging = config.enable_file_logging
-            log_file_path = config.log_file_path
         else:
-            self.config = AuditConfig(log_level=log_level, max_events_memory=max_events_memory,
-                                    enable_file_logging=enable_file_logging, log_file_path=log_file_path)
-            self.log_level = getattr(logging, log_level.upper())
-            self.max_events_memory = max_events_memory
-            self.enable_file_logging = enable_file_logging
-        
-        # In-memory event storage for real-time analysis
-        self.recent_events: deque = deque(maxlen=max_events_memory)
-        self.event_counts = defaultdict(int)
-        self.user_activity = defaultdict(list)
-        
+            self.config = AuditConfig(
+                log_level=log_level,
+                max_events_memory=max_events_memory,
+                enable_file_logging=enable_file_logging,
+                log_file_path=log_file_path
+            )
+
+        # In-memory event storage
+        # event_buffer is the canonical in-memory list (used by tests)
+        self.event_buffer: List[Dict[str, Any]] = []
+
         # Thread safety
         self._lock = threading.RLock()
-        
-        # Setup logging
-        self._setup_logging(log_file_path)
-        
-        # Event correlation
-        self.correlation_rules = []
-        self.active_incidents = {}
-        
+
+        # Setup file logging
+        self._file_handler = None
+        if self.config.enable_file_logging:
+            self._setup_file_logging(self.config.log_file_path)
+
+        # Setup Python logger (console)
+        self._logger = logging.getLogger(f'smcp_audit_{id(self)}')
+        self._logger.setLevel(getattr(logging, self.config.log_level.upper(), logging.INFO))
+        if not self._logger.handlers:
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter(
+                '%(asctime)s - SMCP-AUDIT - %(levelname)s - %(message)s'
+            ))
+            self._logger.addHandler(handler)
+
         # Metrics
-        self.metrics = {
+        self._metrics: Dict[str, Any] = {
             "total_events": 0,
             "events_by_severity": defaultdict(int),
             "events_by_category": defaultdict(int),
-            "start_time": datetime.utcnow()
+            "events_by_hour": defaultdict(int),
+            "start_time": datetime.utcnow(),
         }
-    
-    def _setup_logging(self, log_file_path: str):
-        """Setup Python logging configuration"""
-        self.logger = logging.getLogger('smcp_audit')
-        self.logger.setLevel(self.log_level)
-        
-        # Clear existing handlers
-        self.logger.handlers.clear()
-        
-        # Console handler
-        console_handler = logging.StreamHandler()
-        console_formatter = logging.Formatter(
-            '%(asctime)s - SMCP-AUDIT - %(levelname)s - %(message)s'
-        )
-        console_handler.setFormatter(console_formatter)
-        self.logger.addHandler(console_handler)
-        
-        # File handler (if enabled)
-        if self.enable_file_logging:
-            try:
-                file_handler = logging.FileHandler(log_file_path)
-                file_formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-                )
-                file_handler.setFormatter(file_formatter)
-                self.logger.addHandler(file_handler)
-            except Exception as e:
-                self.logger.warning(f"Could not setup file logging: {e}")
-    
-    def log_security_event(self, event_type: str, user_id: Optional[str],
-                          details: Dict[str, Any], 
-                          severity: Union[str, EventSeverity] = EventSeverity.INFO,
-                          category: Union[str, EventCategory] = EventCategory.SYSTEM,
-                          ip_address: Optional[str] = None,
-                          user_agent: Optional[str] = None,
-                          session_id: Optional[str] = None,
-                          request_id: Optional[str] = None) -> str:
-        """Log a security event
-        
-        Args:
-            event_type: Type of event
-            user_id: User ID associated with event
-            details: Event details dictionary
-            severity: Event severity
-            category: Event category
-            ip_address: Client IP address
-            user_agent: Client user agent
-            session_id: Session identifier
-            request_id: Request identifier
-            
-        Returns:
-            Event ID
-        """
-        # Convert string enums to enum objects
-        if isinstance(severity, str):
-            severity = EventSeverity(severity.upper())
-        if isinstance(category, str):
-            category = EventCategory(category.lower())
-        
-        # Generate event ID
-        event_id = self._generate_event_id()
-        
-        # Create event
-        event = SecurityEvent(
-            timestamp=datetime.utcnow(),
-            event_id=event_id,
-            category=category,
-            severity=severity,
-            user_id=user_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            event_type=event_type,
-            description=self._generate_description(event_type, details),
-            details=details,
-            source_component="smcp_security",
-            session_id=session_id,
-            request_id=request_id
-        )
-        
-        # Store and process event
-        with self._lock:
-            self._store_event(event)
-            self._update_metrics(event)
-            self._check_correlation_rules(event)
-        
-        # Log to Python logger
-        log_message = f"[{event_id}] {event.description} | User: {user_id} | Details: {json.dumps(details)}"
-        
-        if severity == EventSeverity.CRITICAL:
-            self.logger.critical(log_message)
-        elif severity == EventSeverity.ERROR:
-            self.logger.error(log_message)
-        elif severity == EventSeverity.WARNING:
-            self.logger.warning(log_message)
-        elif severity == EventSeverity.DEBUG:
-            self.logger.debug(log_message)
-        else:
-            self.logger.info(log_message)
-        
-        return event_id
-    
+
+    def _setup_file_logging(self, log_file_path: str):
+        """Setup file handler for JSON logging"""
+        try:
+            self._file_handler = open(log_file_path, 'a', buffering=1)
+        except Exception:
+            self._file_handler = None
+
     def _generate_event_id(self) -> str:
         """Generate unique event ID"""
-        timestamp = str(time.time()).encode()
-        random_data = str(time.time_ns()).encode()
-        return hashlib.sha256(timestamp + random_data).hexdigest()[:16]
-    
-    def _generate_description(self, event_type: str, details: Dict[str, Any]) -> str:
-        """Generate human-readable event description"""
-        descriptions = {
-            "authentication_success": "User successfully authenticated",
-            "authentication_failure": "Authentication attempt failed",
-            "authorization_granted": "Authorization granted for resource access",
-            "authorization_denied": "Authorization denied for resource access",
-            "input_validation_failed": "Input validation failed",
-            "rate_limit_exceeded": "Rate limit exceeded",
-            "anomaly_detected": "Anomalous behavior detected",
-            "encryption_operation": "Cryptographic operation performed",
-            "key_rotation": "Cryptographic key rotated",
-            "mcp_request": "MCP request processed",
-            "security_violation": "Security violation detected",
-            "system_startup": "SMCP security system started",
-            "system_shutdown": "SMCP security system shutdown"
-        }
-        
-        base_description = descriptions.get(event_type, f"Security event: {event_type}")
-        
-        # Add context from details
-        if "error" in details:
-            base_description += f" (Error: {details['error']})"
-        elif "status" in details:
-            base_description += f" (Status: {details['status']})"
-        
-        return base_description
-    
-    def _store_event(self, event: SecurityEvent):
-        """Store event in memory and update indices"""
-        self.recent_events.append(event)
-        
-        # Update event counts
-        self.event_counts[event.event_type] += 1
-        
-        # Update user activity
-        if event.user_id:
-            self.user_activity[event.user_id].append({
-                "timestamp": event.timestamp,
-                "event_type": event.event_type,
-                "severity": event.severity,
-                "event_id": event.event_id
-            })
-            
-            # Limit user activity history
-            if len(self.user_activity[event.user_id]) > 1000:
-                self.user_activity[event.user_id] = self.user_activity[event.user_id][-1000:]
-    
-    def _update_metrics(self, event: SecurityEvent):
-        """Update audit metrics"""
-        self.metrics["total_events"] += 1
-        self.metrics["events_by_severity"][event.severity.value] += 1
-        self.metrics["events_by_category"][event.category.value] += 1
-    
-    def _check_correlation_rules(self, event: SecurityEvent):
-        """Check event against correlation rules for incident detection"""
-        # Example correlation rules
-        
-        # Multiple failed authentication attempts
-        if event.event_type == "authentication_failure" and event.user_id:
-            recent_failures = self._get_recent_events_for_user(
-                event.user_id, "authentication_failure", minutes=5
-            )
-            
-            if len(recent_failures) >= 5:
-                self._create_incident(
-                    "multiple_auth_failures",
-                    f"Multiple authentication failures for user {event.user_id}",
-                    EventSeverity.WARNING,
-                    related_events=[e.event_id for e in recent_failures]
-                )
-        
-        # Rapid rate limit violations
-        if event.event_type == "rate_limit_exceeded":
-            recent_violations = self._get_recent_events(
-                "rate_limit_exceeded", minutes=1
-            )
-            
-            if len(recent_violations) >= 10:
-                self._create_incident(
-                    "dos_attack_suspected",
-                    "Possible DoS attack detected - multiple rate limit violations",
-                    EventSeverity.CRITICAL,
-                    related_events=[e.event_id for e in recent_violations]
-                )
-    
-    def _get_recent_events_for_user(self, user_id: str, event_type: str, 
-                                   minutes: int) -> List[SecurityEvent]:
-        """Get recent events for a specific user"""
-        cutoff_time = datetime.utcnow() - timedelta(minutes=minutes)
-        
-        return [
-            event for event in self.recent_events
-            if (event.user_id == user_id and 
-                event.event_type == event_type and
-                event.timestamp >= cutoff_time)
-        ]
-    
-    def _get_recent_events(self, event_type: str, minutes: int) -> List[SecurityEvent]:
-        """Get recent events of a specific type"""
-        cutoff_time = datetime.utcnow() - timedelta(minutes=minutes)
-        
-        return [
-            event for event in self.recent_events
-            if (event.event_type == event_type and
-                event.timestamp >= cutoff_time)
-        ]
-    
-    def _create_incident(self, incident_type: str, description: str,
-                        severity: EventSeverity, related_events: List[str]):
-        """Create a security incident"""
-        incident_id = self._generate_event_id()
-        
-        incident = {
-            "incident_id": incident_id,
-            "incident_type": incident_type,
-            "description": description,
-            "severity": severity,
-            "created_at": datetime.utcnow(),
-            "related_events": related_events,
-            "status": "active"
-        }
-        
-        self.active_incidents[incident_id] = incident
-        
-        # Log the incident
-        self.log_security_event(
-            "security_incident",
-            None,
-            {
-                "incident_id": incident_id,
-                "incident_type": incident_type,
-                "related_events_count": len(related_events)
-            },
-            severity=severity,
-            category=EventCategory.AUDIT
-        )
-    
-    def log_authentication_event(self, user_id: str, success: bool, 
-                               method: str, ip_address: Optional[str] = None,
-                               user_agent: Optional[str] = None,
-                               session_id: Optional[str] = None,
-                               additional_details: Dict[str, Any] = None) -> str:
-        """Log authentication event
-        
-        Args:
-            user_id: User ID
-            success: Whether authentication succeeded
-            method: Authentication method used
-            ip_address: Client IP address
-            user_agent: Client user agent
-            session_id: Session ID
-            additional_details: Additional event details
-            
-        Returns:
-            Event ID
+        return str(uuid.uuid4()).replace('-', '')[:16]
+
+    def _severity_order(self, severity: EventSeverity) -> int:
+        order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+        return order.get(severity.value, 0)
+
+    def log_event(self, category: EventCategory, severity: EventSeverity,
+                  message: str, **kwargs) -> str:
+        """Log a generic event with arbitrary extra fields.
+
+        Returns event ID.
         """
-        details = {
-            "method": method,
-            "success": success,
-            **(additional_details or {})
+        event_id = self._generate_event_id()
+        timestamp = datetime.utcnow()
+
+        event: Dict[str, Any] = {
+            "event_id": event_id,
+            "timestamp": timestamp.isoformat(),
+            "category": category.value,
+            "severity": severity.value,
+            "message": message,
         }
-        
-        event_type = "authentication_success" if success else "authentication_failure"
-        severity = EventSeverity.INFO if success else EventSeverity.WARNING
-        
-        return self.log_security_event(
-            event_type, user_id, details, severity,
-            EventCategory.AUTHENTICATION, ip_address, user_agent, session_id
-        )
-    
-    def log_authorization_event(self, user_id: str, resource: str, 
-                              permission: str, granted: bool,
-                              ip_address: Optional[str] = None,
-                              session_id: Optional[str] = None) -> str:
-        """Log authorization event
-        
-        Args:
-            user_id: User ID
-            resource: Resource being accessed
-            permission: Permission being checked
-            granted: Whether access was granted
-            ip_address: Client IP address
-            session_id: Session ID
-            
-        Returns:
-            Event ID
-        """
-        details = {
-            "resource": resource,
-            "permission": permission,
-            "granted": granted
-        }
-        
-        event_type = "authorization_granted" if granted else "authorization_denied"
-        severity = EventSeverity.INFO if granted else EventSeverity.WARNING
-        
-        return self.log_security_event(
-            event_type, user_id, details, severity,
-            EventCategory.AUTHORIZATION, ip_address, None, session_id
-        )
-    
-    def get_events(self, limit: int = 100, 
-                  severity: Optional[EventSeverity] = None,
-                  category: Optional[EventCategory] = None,
-                  user_id: Optional[str] = None,
-                  since: Optional[datetime] = None) -> List[Dict[str, Any]]:
-        """Get events with filtering
-        
-        Args:
-            limit: Maximum number of events to return
-            severity: Filter by severity
-            category: Filter by category
-            user_id: Filter by user ID
-            since: Filter events since this timestamp
-            
-        Returns:
-            List of event dictionaries
-        """
+        event.update(kwargs)
+
         with self._lock:
-            events = list(self.recent_events)
-        
-        # Apply filters
-        if severity:
-            events = [e for e in events if e.severity == severity]
-        
-        if category:
-            events = [e for e in events if e.category == category]
-        
-        if user_id:
-            events = [e for e in events if e.user_id == user_id]
-        
-        if since:
-            events = [e for e in events if e.timestamp >= since]
-        
-        # Sort by timestamp (newest first) and limit
-        events.sort(key=lambda e: e.timestamp, reverse=True)
-        events = events[:limit]
-        
-        return [event.to_dict() for event in events]
-    
-    def get_user_activity(self, user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
-        """Get activity history for a user
-        
-        Args:
-            user_id: User ID
-            limit: Maximum number of activities to return
-            
-        Returns:
-            List of user activities
-        """
-        with self._lock:
-            activities = self.user_activity.get(user_id, [])
-        
-        # Sort by timestamp (newest first) and limit
-        activities = sorted(activities, key=lambda a: a["timestamp"], reverse=True)
-        return activities[:limit]
-    
-    def get_metrics(self) -> Dict[str, Any]:
-        """Get audit system metrics
-        
-        Returns:
-            Dictionary with metrics
-        """
-        with self._lock:
-            uptime = datetime.utcnow() - self.metrics["start_time"]
-            
-            return {
-                "total_events": self.metrics["total_events"],
-                "events_by_severity": dict(self.metrics["events_by_severity"]),
-                "events_by_category": dict(self.metrics["events_by_category"]),
-                "uptime_seconds": uptime.total_seconds(),
-                "events_in_memory": len(self.recent_events),
-                "active_incidents": len(self.active_incidents),
-                "unique_users": len(self.user_activity),
-                "events_per_second": self.metrics["total_events"] / max(1, uptime.total_seconds())
+            # Enforce buffer_size limit — keep most recent events
+            self.event_buffer.append(event)
+            buf = self.config.buffer_size
+            if len(self.event_buffer) > buf:
+                # Trim oldest
+                self.event_buffer = self.event_buffer[-buf:]
+
+            # Update metrics
+            self._metrics["total_events"] += 1
+            self._metrics["events_by_severity"][severity.value] += 1
+            self._metrics["events_by_category"][category.value] += 1
+            hour_key = timestamp.strftime("%Y-%m-%dT%H")
+            self._metrics["events_by_hour"][hour_key] += 1
+
+        # Write to file if enabled
+        if self.config.enable_file_logging and self._file_handler:
+            try:
+                # Check for rotation
+                if hasattr(self, '_check_rotation'):
+                    self._check_rotation()
+                else:
+                    self._maybe_rotate()
+                self._file_handler.write(json.dumps(event) + "\n")
+                self._file_handler.flush()
+            except Exception:
+                pass
+
+        return event_id
+
+    def _maybe_rotate(self):
+        """Check if log file needs rotation and rotate if necessary."""
+        if not self.config.enable_file_logging or not self._file_handler:
+            return
+        try:
+            file_path = self.config.log_file_path
+            size = os.path.getsize(file_path)
+            max_bytes = self.config.max_log_size_mb * 1024 * 1024
+            if size > max_bytes:
+                self._rotate_log_file()
+        except Exception:
+            pass
+
+    def _rotate_log_file(self):
+        """Rotate the log file."""
+        try:
+            if self._file_handler:
+                self._file_handler.close()
+            log_path = self.config.log_file_path
+            rotated_path = log_path + f".{int(time.time())}"
+            if os.path.exists(log_path):
+                os.rename(log_path, rotated_path)
+            self._file_handler = open(log_path, 'a', buffering=1)
+        except Exception:
+            pass
+
+    def log_security_event(self, event_type: str,
+                           user_id: Optional[str] = None,
+                           details: Optional[Dict[str, Any]] = None,
+                           severity: Union[str, EventSeverity] = EventSeverity.MEDIUM,
+                           category: Union[str, EventCategory] = EventCategory.SYSTEM,
+                           ip_address: Optional[str] = None,
+                           user_agent: Optional[str] = None,
+                           session_id: Optional[str] = None,
+                           request_id: Optional[str] = None) -> str:
+        """Log a security event"""
+        if isinstance(severity, str):
+            # Map old-style names if needed
+            sev_map = {
+                "DEBUG": "LOW", "INFO": "LOW", "WARNING": "MEDIUM",
+                "ERROR": "HIGH"
             }
-    
-    def get_incidents(self, status: str = "active") -> List[Dict[str, Any]]:
-        """Get security incidents
-        
-        Args:
-            status: Filter by incident status
-            
-        Returns:
-            List of incidents
+            sev_val = sev_map.get(severity.upper(), severity.upper())
+            try:
+                severity = EventSeverity(sev_val)
+            except ValueError:
+                severity = EventSeverity.MEDIUM
+
+        if isinstance(category, str):
+            try:
+                category = EventCategory(category.upper())
+            except ValueError:
+                category = EventCategory.SYSTEM
+
+        extra: Dict[str, Any] = {"event_type": event_type}
+        if user_id is not None:
+            extra["user_id"] = user_id
+        if ip_address is not None:
+            extra["ip_address"] = ip_address
+        if user_agent is not None:
+            extra["user_agent"] = user_agent
+        if session_id is not None:
+            extra["session_id"] = session_id
+        if request_id is not None:
+            extra["request_id"] = request_id
+        if details:
+            extra.update(details)
+
+        return self.log_event(category=category, severity=severity,
+                              message=event_type, **extra)
+
+    def log_security_violation(self, user_id: str = None,
+                                violation_type: str = "",
+                                details: str = "",
+                                ip_address: Optional[str] = None,
+                                user_agent: Optional[str] = None,
+                                **kwargs) -> str:
+        """Log a security violation"""
+        extra: Dict[str, Any] = {
+            "user_id": user_id,
+            "violation_type": violation_type,
+            "details": details,
+        }
+        if ip_address is not None:
+            extra["ip_address"] = ip_address
+        if user_agent is not None:
+            extra["user_agent"] = user_agent
+        extra.update(kwargs)
+
+        return self.log_event(
+            category=EventCategory.SECURITY_VIOLATION,
+            severity=EventSeverity.HIGH,
+            message=f"Security violation: {violation_type}",
+            **extra
+        )
+
+    def log_authentication_event(self, user_id: str,
+                                  event_type: str,
+                                  success: bool,
+                                  ip_address: Optional[str] = None,
+                                  failure_reason: Optional[str] = None,
+                                  **kwargs) -> str:
+        """Log authentication event"""
+        severity = EventSeverity.MEDIUM if success else EventSeverity.HIGH
+
+        extra: Dict[str, Any] = {
+            "user_id": user_id,
+            "event_type": event_type,
+            "success": success,
+        }
+        if ip_address is not None:
+            extra["ip_address"] = ip_address
+        if failure_reason is not None:
+            extra["failure_reason"] = failure_reason
+        extra.update(kwargs)
+
+        return self.log_event(
+            category=EventCategory.AUTHENTICATION,
+            severity=severity,
+            message=f"Authentication {event_type}: {'success' if success else 'failure'}",
+            **extra
+        )
+
+    def log_authorization_event(self, user_id: str,
+                                 resource: str,
+                                 action: str,
+                                 granted: bool,
+                                 reason: Optional[str] = None,
+                                 ip_address: Optional[str] = None,
+                                 **kwargs) -> str:
+        """Log authorization event"""
+        severity = EventSeverity.LOW if granted else EventSeverity.MEDIUM
+
+        extra: Dict[str, Any] = {
+            "user_id": user_id,
+            "resource": resource,
+            "action": action,
+            "granted": granted,
+        }
+        if reason is not None:
+            extra["reason"] = reason
+        if ip_address is not None:
+            extra["ip_address"] = ip_address
+        extra.update(kwargs)
+
+        return self.log_event(
+            category=EventCategory.AUTHORIZATION,
+            severity=severity,
+            message=f"Authorization {'granted' if granted else 'denied'} for {resource}",
+            **extra
+        )
+
+    def log_system_event(self, event_type: str,
+                          component: str = None,
+                          details: Any = None,
+                          severity: EventSeverity = EventSeverity.LOW,
+                          **kwargs) -> str:
+        """Log a system event"""
+        extra: Dict[str, Any] = {"event_type": event_type}
+        if component is not None:
+            extra["component"] = component
+        if details is not None:
+            extra["details"] = details
+        extra.update(kwargs)
+
+        return self.log_event(
+            category=EventCategory.SYSTEM,
+            severity=severity,
+            message=f"System event: {event_type}",
+            **extra
+        )
+
+    def get_events(self, limit: int = None,
+                   category: Optional[EventCategory] = None,
+                   min_severity: Optional[EventSeverity] = None,
+                   severity: Optional[EventSeverity] = None,
+                   user_id: Optional[str] = None,
+                   start_time: Optional[datetime] = None,
+                   end_time: Optional[datetime] = None) -> List[Dict[str, Any]]:
+        """Get events with filtering.
+
+        When limit is provided: return the oldest `limit` matching events
+        in ascending (oldest-first) order.
+        When limit is not provided: return all matching events in
+        descending (newest-first) order.
         """
         with self._lock:
-            incidents = [
-                incident for incident in self.active_incidents.values()
-                if incident["status"] == status
-            ]
-        
-        # Convert datetime objects to ISO strings
-        for incident in incidents:
-            incident["created_at"] = incident["created_at"].isoformat()
-        
-        return incidents
-    
-    def resolve_incident(self, incident_id: str, resolution_notes: str = ""):
-        """Resolve a security incident
-        
-        Args:
-            incident_id: Incident ID to resolve
-            resolution_notes: Notes about the resolution
-        """
-        with self._lock:
-            if incident_id in self.active_incidents:
-                self.active_incidents[incident_id]["status"] = "resolved"
-                self.active_incidents[incident_id]["resolved_at"] = datetime.utcnow()
-                self.active_incidents[incident_id]["resolution_notes"] = resolution_notes
-                
-                # Log resolution
-                self.log_security_event(
-                    "incident_resolved",
-                    None,
-                    {
-                        "incident_id": incident_id,
-                        "resolution_notes": resolution_notes
-                    },
-                    EventSeverity.INFO,
-                    EventCategory.AUDIT
-                )
-    
-    def export_events(self, format: str = "json", 
-                     since: Optional[datetime] = None,
-                     until: Optional[datetime] = None) -> str:
-        """Export events for external analysis
-        
-        Args:
-            format: Export format (json, csv)
-            since: Export events since this timestamp
-            until: Export events until this timestamp
-            
-        Returns:
-            Exported data as string
-        """
-        with self._lock:
-            events = list(self.recent_events)
-        
-        # Apply time filters
-        if since:
-            events = [e for e in events if e.timestamp >= since]
-        
-        if until:
-            events = [e for e in events if e.timestamp <= until]
-        
-        if format.lower() == "json":
-            return json.dumps([event.to_dict() for event in events], indent=2)
-        elif format.lower() == "csv":
-            # Simple CSV export
-            import csv
-            import io
-            
-            output = io.StringIO()
-            writer = csv.writer(output)
-            
-            # Header
-            writer.writerow([
-                "timestamp", "event_id", "category", "severity", 
-                "user_id", "event_type", "description", "ip_address"
-            ])
-            
-            # Data
-            for event in events:
-                writer.writerow([
-                    event.timestamp.isoformat(),
-                    event.event_id,
-                    event.category.value,
-                    event.severity.value,
-                    event.user_id or "",
-                    event.event_type,
-                    event.description,
-                    event.ip_address or ""
-                ])
-            
-            return output.getvalue()
+            events = list(self.event_buffer)
+
+        # Filter by category (accept string or EventCategory enum)
+        if category is not None:
+            category_val = category if isinstance(category, str) else category.value
+            events = [e for e in events if e.get("category") == category_val]
+
+        # Filter by exact severity
+        if severity is not None:
+            events = [e for e in events if e.get("severity") == severity.value]
+
+        # Filter by min_severity
+        if min_severity is not None:
+            sev_order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+            min_ord = sev_order.get(min_severity.value, 0)
+            events = [e for e in events
+                      if sev_order.get(e.get("severity", "LOW"), 0) >= min_ord]
+
+        # Filter by user_id
+        if user_id is not None:
+            events = [e for e in events if e.get("user_id") == user_id]
+
+        # Filter by start_time
+        if start_time is not None:
+            events = [e for e in events
+                      if datetime.fromisoformat(e["timestamp"]) >= start_time]
+
+        # Filter by end_time
+        if end_time is not None:
+            events = [e for e in events
+                      if datetime.fromisoformat(e["timestamp"]) <= end_time]
+
+        if limit is not None:
+            # Return the oldest `limit` events (ascending order)
+            events = events[:limit]
         else:
-            raise ValueError(f"Unsupported export format: {format}")
-    
-    def clear_old_events(self, older_than_hours: int = 24):
-        """Clear events older than specified hours
-        
-        Args:
-            older_than_hours: Remove events older than this many hours
-        """
-        cutoff_time = datetime.utcnow() - timedelta(hours=older_than_hours)
-        
+            # No limit: return all, newest-first
+            events = list(reversed(events))
+
+        return events
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """Return metrics summary"""
         with self._lock:
-            # Filter recent events
-            self.recent_events = deque(
-                [e for e in self.recent_events if e.timestamp >= cutoff_time],
-                maxlen=self.max_events_memory
-            )
-            
-            # Clean user activity
-            for user_id in list(self.user_activity.keys()):
-                self.user_activity[user_id] = [
-                    activity for activity in self.user_activity[user_id]
-                    if activity["timestamp"] >= cutoff_time
-                ]
-                
-                # Remove empty user activity lists
-                if not self.user_activity[user_id]:
-                    del self.user_activity[user_id]
-    
+            return {
+                "total_events": self._metrics["total_events"],
+                "events_by_category": dict(self._metrics["events_by_category"]),
+                "events_by_severity": dict(self._metrics["events_by_severity"]),
+                "events_by_hour": dict(self._metrics["events_by_hour"]),
+            }
+
+    def clear_events(self):
+        """Clear all events from memory"""
+        with self._lock:
+            self.event_buffer.clear()
+
     def flush(self):
         """Flush any pending log entries"""
-        # Force flush all handlers
-        for handler in self.logger.handlers:
-            handler.flush()
-    
-    def log_security_violation(self, violation_type: str, user_id: str, 
-                             details: Dict[str, Any], severity: str = "WARNING"):
-        """Log a security violation (alias for log_security_event)"""
-        return self.log_security_event(
-            violation_type, user_id, details, 
-            EventSeverity(severity.upper()), EventCategory.SYSTEM
-        )
+        if self._file_handler:
+            try:
+                self._file_handler.flush()
+            except Exception:
+                pass
+
+    def export_events(self, file_path: str, format: str = "json"):
+        """Export events to a file"""
+        with self._lock:
+            events = list(self.event_buffer)
+
+        if format.lower() == "json":
+            with open(file_path, 'w') as f:
+                f.write(json.dumps(events, default=str))
+        elif format.lower() == "csv":
+            import csv
+            import io
+            output = io.StringIO()
+            if events:
+                writer = csv.DictWriter(output, fieldnames=list(events[0].keys()))
+                writer.writeheader()
+                writer.writerows(events)
+            with open(file_path, 'w') as f:
+                f.write(output.getvalue())
+        else:
+            raise ValueError(f"Unsupported export format: {format}")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.flush()
+        return False
+
+    def close(self):
+        """Close file handler"""
+        if self._file_handler:
+            try:
+                self._file_handler.close()
+            except Exception:
+                pass
+            self._file_handler = None

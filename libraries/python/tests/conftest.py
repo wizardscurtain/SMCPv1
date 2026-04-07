@@ -402,22 +402,40 @@ def malicious_mcp_requests():
 
 
 @pytest.fixture
-def user_context():
+def user_context(security_framework):
     """Create a valid user context for testing."""
+    # Assign test_user to the 'user' role in the framework's RBAC
+    if security_framework.rbac_manager:
+        security_framework.rbac_manager.assign_role("test_user", "user")
+    # Generate a real JWT token signed with the framework's secret
+    token = security_framework.jwt_auth.generate_token(
+        user_id="test_user",
+        roles=["user"],
+        permissions=["mcp:read", "mcp:execute:safe_tools"],
+        mfa_verified=False,
+    )
     return {
         "user_id": "test_user",
-        "token": "valid-jwt-token",
+        "token": token,
         "ip_address": "192.168.1.100",
         "user_agent": "SMCP-Client/1.0"
     }
 
 
 @pytest.fixture
-def admin_context():
+def admin_context(security_framework):
     """Create an admin user context for testing."""
+    if security_framework.rbac_manager:
+        security_framework.rbac_manager.assign_role("test_admin", "admin")
+    token = security_framework.jwt_auth.generate_token(
+        user_id="test_admin",
+        roles=["admin"],
+        permissions=["mcp:*", "system:*", "security:*"],
+        mfa_verified=False,
+    )
     return {
         "user_id": "test_admin",
-        "token": "valid-admin-jwt-token",
+        "token": token,
         "ip_address": "192.168.1.101",
         "user_agent": "SMCP-Admin/1.0"
     }

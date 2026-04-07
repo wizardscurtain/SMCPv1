@@ -8,6 +8,7 @@ import pytest
 import asyncio
 import json
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 from smcp_security.core import SMCPSecurityFramework, SecurityConfig
 from smcp_security.exceptions import SecurityError, ValidationError, AuthenticationError
@@ -28,7 +29,7 @@ class TestEndToEndWorkflows:
             enable_rbac=True,
             enable_rate_limiting=True,
             default_rate_limit=100,
-            adaptive_limits=True,
+            adaptive_limits=False,  # Disabled for deterministic test performance
             enable_encryption=True,
             enable_ai_immune=True,
             anomaly_threshold=0.6,

@@ -1,5 +1,13 @@
 # SMCP Security - .NET Library
 
+> **Status: Planned — not yet implemented.**
+>
+> The API design and package manifest below show the intended interface for this language binding.
+> The Python library ([`libraries/python`](../python)) is the reference implementation and the only
+> fully-working version today. Contributions welcome — see
+> [CONTRIBUTING.md](../../CONTRIBUTING.md) to help build this out.
+
+---
 [![NuGet Version](https://img.shields.io/nuget/v/SMCP.Security.svg)](https://www.nuget.org/packages/SMCP.Security/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/SMCP.Security.svg)](https://www.nuget.org/packages/SMCP.Security/)
 [![.NET Version](https://img.shields.io/badge/.NET-6.0%2B-blue.svg)](https://dotnet.microsoft.com/)

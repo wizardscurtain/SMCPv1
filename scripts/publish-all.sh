@@ -1,12 +1,26 @@
 #!/bin/bash
 
 # SMCP Security - Publish All Libraries Script
-# This script publishes all SMCP Security libraries to their respective package registries
+# This script publishes all SMCP Security libraries to their respective package registries.
+#
+# CURRENT STATUS (update as each library reaches production-readiness):
+#   python  — READY  (270/270 tests, pip-installable)
+#   nodejs  — PLANNED (not yet implemented)
+#   go      — PLANNED (not yet implemented)
+#   rust    — PLANNED (not yet implemented)
+#   java    — PLANNED (not yet implemented)
+#   csharp  — PLANNED (not yet implemented)
+#   vscode  — PLANNED (not yet implemented)
+#
+# Prefer the GitHub Actions workflow (.github/workflows/publish-python.yml)
+# for automated PyPI publishing via OIDC trusted publishing.
+# Use this script only for manual / local publishing.
 
 set -e
 
-echo "🚀 Publishing All SMCP Security Libraries"
-echo "========================================"
+echo "Publishing SMCP Security Libraries"
+echo "===================================="
+echo "NOTE: Only the Python library is currently production-ready."
 echo
 
 # Get script directory

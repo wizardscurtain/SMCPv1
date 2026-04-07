@@ -103,30 +103,45 @@ class RBACManager:
         """
         parts = perm_str.split(":")
         
+        EFFECTS = {"allow", "deny"}
+
         if len(parts) == 1:
-            # Simple action
+            # Simple action: "read"
             return Permission(action=parts[0])
+
         elif len(parts) == 2:
-            # action:resource or effect:action
-            if parts[0] in ["allow", "deny"]:
-                effect = PermissionEffect(parts[0])
-                return Permission(action=parts[1], effect=effect)
+            if parts[0] in EFFECTS:
+                # "allow:mcp" or "deny:mcp" — effect:namespace (unusual but valid)
+                return Permission(action=parts[1], effect=PermissionEffect(parts[0]))
             else:
-                return Permission(action=parts[0], resource=parts[1])
+                # "mcp:read" — namespace:action, treat whole as action
+                return Permission(action=perm_str)
+
         elif len(parts) == 3:
-            # effect:action:resource
-            if parts[0] in ["allow", "deny"]:
-                effect = PermissionEffect(parts[0])
-                return Permission(action=parts[1], resource=parts[2], effect=effect)
+            if parts[0] in EFFECTS:
+                # "allow:mcp:write" or "deny:mcp:delete" — effect:namespace:action
+                return Permission(
+                    action=f"{parts[1]}:{parts[2]}",
+                    effect=PermissionEffect(parts[0])
+                )
             else:
-                # Treat as action:resource:extra_resource
-                return Permission(action=parts[0], resource=":".join(parts[1:]))
+                # "mcp:read:files" — namespace:action:resource
+                return Permission(
+                    action=f"{parts[0]}:{parts[1]}",
+                    resource=parts[2]
+                )
+
         else:
-            # More complex format with conditions (simplified)
-            effect = PermissionEffect(parts[0]) if parts[0] in ["allow", "deny"] else PermissionEffect.ALLOW
-            action = parts[1] if parts[0] in ["allow", "deny"] else parts[0]
-            resource = parts[2] if parts[0] in ["allow", "deny"] else parts[1]
-            
+            # 4+ parts: [effect:]namespace:action:resource
+            if parts[0] in EFFECTS:
+                effect = PermissionEffect(parts[0])
+                action = f"{parts[1]}:{parts[2]}"
+                resource = ":".join(parts[3:])
+            else:
+                effect = PermissionEffect.ALLOW
+                action = f"{parts[0]}:{parts[1]}"
+                resource = ":".join(parts[2:])
+
             return Permission(action=action, resource=resource, effect=effect)
     
     def assign_role(self, user_id: str, role_name: str):
@@ -173,9 +188,9 @@ class RBACManager:
         Returns:
             True if permission is granted, False otherwise
         """
-        # Check cache first
+        # Cache only for context-free checks (context is dynamic per request)
         cache_key = f"{user_id}:{required_permission}:{resource}"
-        if self._is_cached(cache_key):
+        if context is None and self._is_cached(cache_key):
             return self.permission_cache[user_id][cache_key]
         
         # Get all user permissions (including inherited)
@@ -197,8 +212,9 @@ class RBACManager:
         # Deny takes precedence
         result = has_allow and not has_deny
         
-        # Cache result
-        self._cache_result(user_id, cache_key, result)
+        # Only cache context-free results (context changes per request)
+        if context is None:
+            self._cache_result(user_id, cache_key, result)
         
         return result
     
@@ -235,28 +251,45 @@ class RBACManager:
         
         return all_permissions
     
-    def _matches_permission(self, permission: Permission, 
-                          required_action: str, resource: str) -> bool:
-        """Check if permission matches required action and resource
-        
-        Args:
-            permission: Permission to check
-            required_action: Required action
-            resource: Resource being accessed
-            
-        Returns:
-            True if permission matches
+    def _matches_permission(self, permission: Permission,
+                             required_action: str, resource: str) -> bool:
+        """Check if permission matches required action and resource.
+
+        Matching rules:
+          1. The permission’s action must match the required_action (supports wildcards).
+          2. The permission’s resource must match the requested resource:
+             - permission.resource == "*" matches any resource
+             - An explicit resource on the permission matches only when it equals
+               (or pattern-matches) the requested resource.
+             - When the caller requests resource "*" (unspecified), any permission
+               resource is acceptable.
         """
-        # Reconstruct the full permission string for comparison
-        perm_full = f"{permission.action}:{permission.resource}"
-        
-        # Check if the permission matches the required action
-        if not self._matches_pattern(perm_full, required_action):
-            # Also try matching just the action part
-            if not self._matches_pattern(permission.action, required_action):
-                return False
-        
-        return True
+        # --- Action check ---
+        action_match = (
+            self._matches_pattern(permission.action, required_action)
+            or self._matches_pattern(required_action, permission.action)
+        )
+        if not action_match:
+            return False
+
+        # --- Resource check ---
+        perm_resource = permission.resource or "*"
+        req_resource = resource or "*"
+
+        # Wildcard permission resource matches anything
+        if perm_resource == "*":
+            return True
+
+        # Permission has a specific resource restriction.
+        # If the caller did not specify a resource ("*"), an ALLOW permission
+        # with a specific resource should still grant access (it covers that
+        # resource), but a DENY permission should NOT apply to an unspecified
+        # resource request (deny is scoped only to that resource).
+        if req_resource == "*":
+            return permission.effect == PermissionEffect.ALLOW
+
+        # Both sides are specific: they must match
+        return self._matches_pattern(perm_resource, req_resource)
     
     def _matches_pattern(self, pattern: str, value: str) -> bool:
         """Check if value matches pattern (supports wildcards)

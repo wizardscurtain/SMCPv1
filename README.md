@@ -11,6 +11,17 @@
 
 A comprehensive, production-ready security framework for Model Context Protocol (MCP) implementations. SMCPv1 provides multi-layered security, AI-immune threat detection, and seamless integration across multiple programming languages.
 
+## ⚠️ Pre-Release Notice
+
+**SMCPv1 is currently in active development (pre-1.0 release).** While the security framework is functional and the core design is production-oriented, the following should be noted before use in production environments:
+
+- **CNSA 2.0 alignment**: The cryptographic primitives (ChaCha20-Poly1305, Argon2, EC P-384) are CNSA-compatible choices, but this implementation has not undergone formal CNSA 2.0 certification. Use in government systems requires independent security review.
+- **TLS/mTLS**: Transport layer security configuration (`TLSConfig`) is provided as a helper — actual TLS termination must be configured at your infrastructure layer (nginx, envoy, or your language's `ssl` module).
+- **JWT algorithm**: Default uses HS256 for single-server deployments. For distributed/multi-party environments, configure `preferred_algorithm="ES384"`.
+- **Not yet published**: PyPI, npm, and other package registry badges reflect planned publication targets, not current availability.
+
+Maintained by [Aevom](https://github.com/wizardscurtain) as part of the SMCP standardization initiative.
+
 ## Quick Start
 
 ### Choose Your Language

@@ -8,9 +8,10 @@ import numpy as np
 import time
 import json
 import re
+import math
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import defaultdict, deque
 import hashlib
 import statistics
@@ -31,10 +32,14 @@ from .exceptions import AnomalyDetectionError
 @dataclass
 class AIImmuneConfig:
     """Configuration for AI Immune System"""
-    threshold: float = 0.8
-    learning_mode: bool = False
-    enable_ml: bool = True
+    threshold: float = 0.7
+    learning_mode: bool = True
+    model_update_interval: int = 3600
+    feature_window_size: int = 100
+    contamination_rate: float = 0.1
     enable_behavioral_analysis: bool = True
+    enable_pattern_detection: bool = True
+    enable_ml: bool = True
     max_training_samples: int = 10000
     feature_cache_size: int = 1000
     anomaly_history_size: int = 1000
@@ -51,7 +56,7 @@ class AnomalyResult:
     features: List[float]
     detection_method: str
     timestamp: datetime
-    
+
 
 @dataclass
 class ThreatInfo:
@@ -61,640 +66,744 @@ class ThreatInfo:
     confidence: float
     indicators: List[str]
     mitigation_suggestions: List[str]
-    
 
-class FeatureExtractor:
-    """Extracts features from MCP requests for ML analysis"""
-    
+
+# ---------------------------------------------------------------------------
+# Helper: feature extraction utils
+# ---------------------------------------------------------------------------
+
+def _calculate_entropy(text: str) -> float:
+    """Calculate Shannon entropy of text"""
+    if not text:
+        return 0.0
+    char_counts: Dict[str, int] = defaultdict(int)
+    for ch in text:
+        char_counts[ch] += 1
+    entropy = 0.0
+    n = len(text)
+    for count in char_counts.values():
+        p = count / n
+        if p > 0:
+            entropy -= p * math.log2(p)
+    return entropy
+
+
+def _calculate_nesting_depth(obj: Any, depth: int = 0) -> int:
+    """Calculate maximum nesting depth"""
+    if isinstance(obj, dict):
+        if not obj:
+            return depth
+        return max(_calculate_nesting_depth(v, depth + 1) for v in obj.values())
+    elif isinstance(obj, list):
+        if not obj:
+            return depth
+        return max(_calculate_nesting_depth(item, depth + 1) for item in obj)
+    return depth
+
+
+def _special_char_ratio(text: str) -> float:
+    if not text:
+        return 0.0
+    special = sum(1 for c in text if not c.isalnum() and not c.isspace())
+    return special / len(text)
+
+
+def _count_params(obj: Any) -> int:
+    if isinstance(obj, dict):
+        return len(obj)
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# ThreatClassifier
+# ---------------------------------------------------------------------------
+
+# Threat patterns: (regex, threat_type, weight)
+_THREAT_PATTERNS = [
+    (r'[;&|`$()]\s*(rm|del|format|cat|curl|wget|chmod|chown|kill|sudo|su)\b',
+     "command_injection", 0.9),
+    (r';\s*(rm|ls|cat|whoami|uname|id)\b',
+     "command_injection", 0.9),
+    (r'\$\([^)]*\)',
+     "command_injection", 0.85),
+    (r'\b(rm\s+-rf|rm\s+-r)\b',
+     "command_injection", 0.95),
+    (r"'\s*or\s*'?1'?\s*=\s*'?1",
+     "sql_injection", 0.9),
+    (r'\b(union\s+select|select\s+\*\s+from|insert\s+into|drop\s+table)\b',
+     "sql_injection", 0.9),
+    (r'<script[^>]*>.*?</script>',
+     "xss_attack", 0.9),
+    (r'<img[^>]+onerror\s*=',
+     "xss_attack", 0.85),
+    (r'javascript:',
+     "xss_attack", 0.8),
+    (r'\.\.[/\\]',
+     "path_traversal", 0.85),
+    (r'%2e%2e%2f',
+     "path_traversal", 0.85),
+    (r'\bignore\s+(previous|all)\s+(instructions?|prompt)',
+     "prompt_injection", 0.9),
+    (r'(forget|disregard|override|bypass)\s+(your|all|previous)\s+(instructions?|rules?|guidelines?)',
+     "prompt_injection", 0.85),
+    (r'\b(eval|exec|system|shell_exec)\s*\(',
+     "code_execution", 0.95),
+    # Bare system commands in params
+    (r'\bls\s+/',
+     "command_injection", 0.8),
+    (r'\bcat\s+/etc/',
+     "command_injection", 0.85),
+    (r'\bwhoami\b',
+     "command_injection", 0.8),
+    # Explicit malicious / attack-payload markers
+    (r'\bmalicious',
+     "malicious_payload", 0.95),
+    (r'\battack[_\s]vector',
+     "attack_pattern", 0.75),
+    (r'\bsuspicious[_\s]command',
+     "suspicious_activity", 0.65),
+    (r'\bunusual[_\s]pattern',
+     "suspicious_activity", 0.60),
+]
+
+# Risk scores per method name
+_METHOD_RISK = {
+    "tools/call": 0.4,
+    "tools/list": 0.05,
+    "resources/read": 0.15,
+    "resources/write": 0.4,
+    "resources/delete": 0.6,
+    "prompts/get": 0.1,
+    "sampling/createMessage": 0.3,
+}
+
+
+class ThreatClassifier:
+    """Classifies requests into threat categories using pattern + ML analysis"""
+
     def __init__(self):
-        self.feature_names = [
-            "request_size",
-            "parameter_count", 
-            "method_length",
-            "has_file_operations",
-            "has_network_operations",
-            "has_database_operations",
-            "entropy",
-            "special_char_ratio",
-            "numeric_ratio",
-            "uppercase_ratio",
-            "time_of_day",
-            "day_of_week",
-            "request_depth",
-            "string_length_variance",
-            "suspicious_keywords_count"
-        ]
-        
-        self.suspicious_keywords = [
-            "admin", "root", "password", "secret", "token", "key",
-            "exec", "eval", "system", "shell", "cmd", "command",
-            "script", "inject", "payload", "exploit", "hack",
-            "bypass", "override", "escalate", "privilege"
-        ]
-    
-    def extract_features(self, request_data: Dict[str, Any]) -> np.ndarray:
-        """Extract numerical features from MCP request
-        
-        Args:
-            request_data: MCP request dictionary
-            
-        Returns:
-            Feature vector as numpy array
+        self.threat_patterns: Dict[str, Any] = {
+            "command_injection": {
+                "patterns": [r'[;&|`$()]', r'\b(rm|del|format|shutdown)\b'],
+                "severity": "HIGH",
+            },
+            "sql_injection": {
+                "patterns": [r'(union|select|insert|update|delete)\s+',
+                             r"'\s*or\s*'1'\s*=\s*'1"],
+                "severity": "HIGH",
+            },
+            "xss_attack": {
+                "patterns": [r'<script[^>]*>.*?</script>', r'javascript:',
+                             r'on\w+\s*='],
+                "severity": "MEDIUM",
+            },
+            "path_traversal": {
+                "patterns": [r'\.\.[/\\]', r'%2e%2e%2f'],
+                "severity": "HIGH",
+            },
+            "prompt_injection": {
+                "patterns": [r'ignore\s+previous\s+instructions?',
+                             r'(forget|disregard|override)\s+(your|all)'],
+                "severity": "HIGH",
+            },
+            "code_execution": {
+                "patterns": [r'\b(eval|exec|system|shell_exec)\s*\('],
+                "severity": "CRITICAL",
+            },
+        }
+        self.classification_history: List[Dict[str, Any]] = []
+        self.model = None
+        self._user_behavior: Dict[str, Dict[str, Any]] = defaultdict(
+            lambda: {
+                "requests": [],
+                "timestamps": [],
+                "methods": defaultdict(int),
+            }
+        )
+
+    def classify_request(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Classify a request for threat level.
+
+        Returns dict with threat_level, threat_type, confidence, features, method.
+        """
+        if not ML_AVAILABLE:
+            return self._classify_pattern_only(request_data)
+
+        features = self.extract_features(request_data)
+        request_text = json.dumps(request_data)
+
+        # Pattern scan
+        best_threat = "none"
+        best_score = 0.0
+        for pattern, threat_type, weight in _THREAT_PATTERNS:
+            if re.search(pattern, request_text, re.IGNORECASE | re.DOTALL):
+                if weight > best_score:
+                    best_score = weight
+                    best_threat = threat_type
+
+        threat_level = best_score
+        confidence = min(1.0, best_score + 0.1) if best_score > 0 else 0.1
+
+        result = {
+            "threat_level": threat_level,
+            "threat_type": best_threat if best_score > 0.5 else "high_risk" if best_score > 0.3 else "none",
+            "confidence": confidence,
+            "features": list(features.values()),
+            "method": "pattern_ml_hybrid",
+        }
+        self.classification_history.append(result)
+        return result
+
+    def _classify_pattern_only(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Pattern-based classification only (when ML unavailable)"""
+        features = self.extract_features(request_data)
+        request_text = json.dumps(request_data)
+
+        best_threat = "none"
+        best_score = 0.0
+        for pattern, threat_type, weight in _THREAT_PATTERNS:
+            if re.search(pattern, request_text, re.IGNORECASE | re.DOTALL):
+                if weight > best_score:
+                    best_score = weight
+                    best_threat = threat_type
+
+        threat_level = best_score
+        confidence = min(1.0, best_score + 0.1) if best_score > 0 else 0.1
+
+        result = {
+            "threat_level": threat_level,
+            "threat_type": best_threat if best_score > 0.5 else "none",
+            "confidence": confidence,
+            "features": list(features.values()),
+            "method": "pattern_based",
+        }
+        self.classification_history.append(result)
+        return result
+
+    def extract_features(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract named features from a request.
+
+        Returns a dict with:
+            request_size, nesting_depth, string_entropy, special_char_ratio,
+            method_risk_score, param_count
         """
         request_str = json.dumps(request_data)
-        params = request_data.get("params", {})
         method = request_data.get("method", "")
-        
-        features = [
-            len(request_str),  # request_size
-            len(params),  # parameter_count
-            len(method),  # method_length
-            self._has_file_operations(request_data),  # has_file_operations
-            self._has_network_operations(request_data),  # has_network_operations
-            self._has_database_operations(request_data),  # has_database_operations
-            self._calculate_entropy(request_str),  # entropy
-            self._calculate_special_char_ratio(request_str),  # special_char_ratio
-            self._calculate_numeric_ratio(request_str),  # numeric_ratio
-            self._calculate_uppercase_ratio(request_str),  # uppercase_ratio
-            datetime.now().hour,  # time_of_day
-            datetime.now().weekday(),  # day_of_week
-            self._calculate_depth(request_data),  # request_depth
-            self._calculate_string_length_variance(params),  # string_length_variance
-            self._count_suspicious_keywords(request_str)  # suspicious_keywords_count
-        ]
-        
-        return np.array(features, dtype=float)
-    
-    def _has_file_operations(self, request_data: Dict[str, Any]) -> float:
-        """Check if request contains file operations"""
-        request_str = json.dumps(request_data).lower()
-        file_indicators = ["file", "path", "directory", "folder", "read", "write", "delete"]
-        return float(any(indicator in request_str for indicator in file_indicators))
-    
-    def _has_network_operations(self, request_data: Dict[str, Any]) -> float:
-        """Check if request contains network operations"""
-        request_str = json.dumps(request_data).lower()
-        network_indicators = ["http", "url", "api", "request", "fetch", "download"]
-        return float(any(indicator in request_str for indicator in network_indicators))
-    
-    def _has_database_operations(self, request_data: Dict[str, Any]) -> float:
-        """Check if request contains database operations"""
-        request_str = json.dumps(request_data).lower()
-        db_indicators = ["sql", "query", "database", "table", "select", "insert", "update"]
-        return float(any(indicator in request_str for indicator in db_indicators))
-    
-    def _calculate_entropy(self, text: str) -> float:
-        """Calculate Shannon entropy of text"""
-        if not text:
-            return 0.0
-        
-        # Count character frequencies
-        char_counts = defaultdict(int)
-        for char in text:
-            char_counts[char] += 1
-        
-        # Calculate entropy
-        entropy = 0.0
-        text_length = len(text)
-        
-        for count in char_counts.values():
-            probability = count / text_length
-            if probability > 0:
-                entropy -= probability * np.log2(probability)
-        
-        return entropy
-    
-    def _calculate_special_char_ratio(self, text: str) -> float:
-        """Calculate ratio of special characters"""
-        if not text:
-            return 0.0
-        
-        special_chars = sum(1 for char in text if not char.isalnum() and not char.isspace())
-        return special_chars / len(text)
-    
-    def _calculate_numeric_ratio(self, text: str) -> float:
-        """Calculate ratio of numeric characters"""
-        if not text:
-            return 0.0
-        
-        numeric_chars = sum(1 for char in text if char.isdigit())
-        return numeric_chars / len(text)
-    
-    def _calculate_uppercase_ratio(self, text: str) -> float:
-        """Calculate ratio of uppercase characters"""
-        if not text:
-            return 0.0
-        
-        alpha_chars = sum(1 for char in text if char.isalpha())
-        if alpha_chars == 0:
-            return 0.0
-        
-        uppercase_chars = sum(1 for char in text if char.isupper())
-        return uppercase_chars / alpha_chars
-    
-    def _calculate_depth(self, obj: Any, current_depth: int = 0) -> float:
-        """Calculate maximum nesting depth of object"""
-        if isinstance(obj, dict):
-            if not obj:
-                return current_depth
-            return max(self._calculate_depth(value, current_depth + 1) 
-                      for value in obj.values())
-        elif isinstance(obj, list):
-            if not obj:
-                return current_depth
-            return max(self._calculate_depth(item, current_depth + 1) 
-                      for item in obj)
-        else:
-            return current_depth
-    
-    def _calculate_string_length_variance(self, params: Dict[str, Any]) -> float:
-        """Calculate variance in string lengths within parameters"""
-        string_lengths = []
-        
-        def collect_strings(obj):
-            if isinstance(obj, str):
-                string_lengths.append(len(obj))
-            elif isinstance(obj, dict):
-                for value in obj.values():
-                    collect_strings(value)
-            elif isinstance(obj, list):
-                for item in obj:
-                    collect_strings(item)
-        
-        collect_strings(params)
-        
-        if len(string_lengths) < 2:
-            return 0.0
-        
-        return float(np.var(string_lengths))
-    
-    def _count_suspicious_keywords(self, text: str) -> float:
-        """Count suspicious keywords in text"""
-        text_lower = text.lower()
-        count = sum(1 for keyword in self.suspicious_keywords 
-                   if keyword in text_lower)
-        return float(count)
+        params = request_data.get("params", {})
 
+        return {
+            "request_size": len(request_str),
+            "nesting_depth": _calculate_nesting_depth(request_data),
+            "string_entropy": _calculate_entropy(request_str),
+            "special_char_ratio": _special_char_ratio(request_str),
+            "method_risk_score": _METHOD_RISK.get(method, 0.2),
+            "param_count": _count_params(params),
+        }
+
+    def classify_text_pattern(self, text: str) -> Dict[str, Any]:
+        """Classify a raw text payload for threat type.
+
+        Returns dict with threat_detected, threat_type, confidence.
+        """
+        best_threat = None
+        best_score = 0.0
+        for pattern, threat_type, weight in _THREAT_PATTERNS:
+            if re.search(pattern, text, re.IGNORECASE | re.DOTALL):
+                if weight > best_score:
+                    best_score = weight
+                    best_threat = threat_type
+
+        if best_threat:
+            return {
+                "threat_detected": True,
+                "threat_type": best_threat,
+                "confidence": best_score,
+            }
+        return {
+            "threat_detected": False,
+            "threat_type": "none",
+            "confidence": 0.0,
+        }
+
+    def update_user_behavior(self, user_id: str, request: Dict[str, Any]):
+        """Record a request in a user's behavior profile"""
+        profile = self._user_behavior[user_id]
+        profile["requests"].append(request)
+        profile["timestamps"].append(time.time())
+        method = request.get("method", "unknown")
+        profile["methods"][method] += 1
+
+    def analyze_user_behavior(self, user_id: str) -> Dict[str, Any]:
+        """Analyze a user's behavior for anomalies.
+
+        Returns dict with anomaly_score, behavior_patterns, risk_level.
+        """
+        profile = self._user_behavior[user_id]
+        requests = profile["requests"]
+
+        if not requests:
+            return {
+                "anomaly_score": 0.0,
+                "behavior_patterns": {},
+                "risk_level": "low",
+            }
+
+        # Compute method distribution
+        total = len(requests)
+        method_dist = {m: c / total for m, c in profile["methods"].items()}
+
+        # Check each request for suspicious indicators
+        system_cmd_re = re.compile(
+            r'\b(ls|cat|whoami|id|uname|ps|netstat|ifconfig|wget|curl|chmod|chown|sudo|su|rm|del)\b',
+            re.IGNORECASE
+        )
+
+        suspicious_count = 0
+        for req in requests:
+            req_str = json.dumps(req)
+            is_sus = False
+            # Check threat patterns
+            for pattern, _, _ in _THREAT_PATTERNS:
+                if re.search(pattern, req_str, re.IGNORECASE | re.DOTALL):
+                    is_sus = True
+                    break
+            # Check bare system commands in params
+            if not is_sus:
+                params_str = json.dumps(req.get("params", {}))
+                if system_cmd_re.search(params_str):
+                    is_sus = True
+            if is_sus:
+                suspicious_count += 1
+
+        suspicious_ratio = suspicious_count / total if total > 0 else 0.0
+        # Give extra weight to high suspicious ratios
+        anomaly_score = min(1.0, suspicious_ratio * 3.5)
+
+        if anomaly_score > 0.5:
+            risk_level = "high"
+        elif anomaly_score > 0.2:
+            risk_level = "medium"
+        else:
+            risk_level = "low"
+
+        return {
+            "anomaly_score": anomaly_score,
+            "behavior_patterns": method_dist,
+            "risk_level": risk_level,
+        }
+
+    def analyze_temporal_patterns(self, user_id: str) -> Dict[str, Any]:
+        """Analyze temporal patterns (rate, bursts) for a user."""
+        profile = self._user_behavior[user_id]
+        timestamps = profile["timestamps"]
+
+        if len(timestamps) < 2:
+            return {
+                "request_rate": 0.0,
+                "burst_detected": False,
+                "anomaly_score": 0.0,
+            }
+
+        total_time = timestamps[-1] - timestamps[0]
+        if total_time <= 0:
+            total_time = 0.001
+
+        request_rate = len(timestamps) / total_time  # requests per second
+
+        # Detect burst: many requests in a short window
+        burst_detected = request_rate > 50
+
+        # Anomaly score based on rate
+        anomaly_score = min(1.0, request_rate / 100.0) if request_rate > 10 else 0.0
+
+        return {
+            "request_rate": request_rate,
+            "burst_detected": burst_detected,
+            "anomaly_score": anomaly_score,
+        }
+
+    def train_model(self, training_data: List[List[float]]):
+        """Train an ML model on feature vectors"""
+        if not ML_AVAILABLE or not training_data:
+            return
+
+        import sklearn.ensemble
+        X = np.array(training_data)
+        model = sklearn.ensemble.IsolationForest(contamination=0.1, random_state=42)
+        model.fit(X)
+        self.model = model
+
+
+# ---------------------------------------------------------------------------
+# AnomalyDetector
+# ---------------------------------------------------------------------------
 
 class AnomalyDetector:
-    """Standalone anomaly detector (alias for AIImmuneSystem for compatibility)"""
-    
-    def __init__(self, config: Optional[AIImmuneConfig] = None):
-        if config is None:
-            config = AIImmuneConfig()
-        self.config = config
-        self.ai_immune = AIImmuneSystem(config.threshold, config.learning_mode)
-    
-    def detect(self, request_data: Dict[str, Any], user_id: Optional[str] = None):
-        """Detect anomalies in request data"""
-        return self.ai_immune.detect_anomaly(request_data, user_id)
-    
-    def train(self, normal_requests: List[Dict[str, Any]]):
-        """Train the detector on normal requests"""
-        return self.ai_immune.train(normal_requests)
+    """Detects statistical and ML-based anomalies in feature vectors"""
 
-
-class AIImmuneSystem:
-    """AI-based immune system for anomaly detection"""
-    
-    def __init__(self, threshold: float = 0.8, learning_mode: bool = False, config: Optional[AIImmuneConfig] = None):
+    def __init__(self, config: Optional[AIImmuneConfig] = None,
+                 threshold: float = 0.7,
+                 learning_mode: bool = False):
+        # Accept either a config object OR direct kwargs
         if config is not None:
             self.config = config
             self.threshold = config.threshold
             self.learning_mode = config.learning_mode
         else:
-            self.config = AIImmuneConfig(threshold=threshold, learning_mode=learning_mode)
+            self.config = AIImmuneConfig(threshold=threshold,
+                                         learning_mode=learning_mode)
             self.threshold = threshold
             self.learning_mode = learning_mode
-        self.feature_extractor = FeatureExtractor()
-        
-        # ML models (if available)
-        if ML_AVAILABLE:
-            self.anomaly_detector = IsolationForest(
-                contamination=0.1,  # Expected proportion of anomalies
-                random_state=42,
-                n_estimators=100
-            )
-            self.scaler = StandardScaler()
-            self.clustering_model = DBSCAN(eps=0.5, min_samples=5)
-        else:
-            self.anomaly_detector = None
-            self.scaler = None
-            self.clustering_model = None
-        
-        self.is_trained = False
-        self.training_data = []
-        
-        # Pattern-based detection (fallback)
-        self.pattern_detector = PatternBasedDetector()
-        
-        # Behavioral analysis
-        self.user_profiles = defaultdict(lambda: {
-            "request_history": deque(maxlen=1000),
-            "feature_history": deque(maxlen=1000),
-            "baseline_established": False,
-            "baseline_features": None
-        })
-        
-        # Metrics
-        self.detection_metrics = {
-            "total_requests": 0,
-            "anomalies_detected": 0,
-            "false_positives": 0,
-            "true_positives": 0,
-            "detection_accuracy": 0.0
-        }
-    
-    def train(self, normal_requests: List[Dict[str, Any]]):
-        """Train the anomaly detection model on normal requests
-        
-        Args:
-            normal_requests: List of normal MCP requests for training
-        """
-        if not ML_AVAILABLE:
-            # Use pattern-based training
-            self.pattern_detector.train(normal_requests)
-            self.is_trained = True
+
+        self.baseline_data: List[List[float]] = []
+        self.model = None
+        self.scaler = None
+        self.detection_history: List[Dict[str, Any]] = []
+        self._update_counter = 0
+        self._retrain_every = 10  # retrain after every N new points
+
+    def add_baseline_data(self, data_point: List[float]):
+        """Add a data point to baseline training data"""
+        self.baseline_data.append(data_point)
+
+    def train_model(self):
+        """Train an IsolationForest on baseline data"""
+        if not ML_AVAILABLE or not self.baseline_data:
             return
-        
-        # Extract features from training data
-        features_list = []
-        for request in normal_requests:
-            features = self.feature_extractor.extract_features(request)
-            features_list.append(features)
-            self.training_data.append(request)
-        
-        if not features_list:
-            raise AnomalyDetectionError("No training data provided")
-        
-        X = np.array(features_list)
-        
-        # Scale features
-        X_scaled = self.scaler.fit_transform(X)
-        
-        # Train anomaly detector
-        self.anomaly_detector.fit(X_scaled)
-        
-        # Train clustering model for pattern analysis
-        self.clustering_model.fit(X_scaled)
-        
-        self.is_trained = True
-    
-    def detect_anomaly(self, request_data: Dict[str, Any], 
-                      user_id: Optional[str] = None) -> AnomalyResult:
-        """Detect if a request is anomalous
-        
-        Args:
-            request_data: MCP request to analyze
-            user_id: User ID for behavioral analysis
-            
-        Returns:
-            AnomalyResult with detection information
+
+        import sklearn.ensemble
+        import sklearn.preprocessing
+        X = np.array(self.baseline_data)
+
+        scaler = sklearn.preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        model = sklearn.ensemble.IsolationForest(contamination=0.1, random_state=42)
+        model.fit(X_scaled)
+
+        self.scaler = scaler
+        self.model = model
+
+    def detect_anomaly(self, data_point: List[float]) -> Dict[str, Any]:
+        """Detect if a data point is anomalous.
+
+        Returns dict with is_anomaly, anomaly_score, confidence.
         """
-        self.detection_metrics["total_requests"] += 1
-        
-        # Extract features
-        features = self.feature_extractor.extract_features(request_data)
-        
-        # Update user profile if provided
-        if user_id:
-            self._update_user_profile(user_id, request_data, features)
-        
-        # Perform detection
-        if ML_AVAILABLE and self.is_trained:
-            result = self._ml_based_detection(features, user_id)
-        else:
-            result = self._pattern_based_detection(request_data, features)
-        
-        # Update metrics
-        if result.is_anomaly:
-            self.detection_metrics["anomalies_detected"] += 1
-        
-        return result
-    
-    def _ml_based_detection(self, features: np.ndarray, 
-                           user_id: Optional[str] = None) -> AnomalyResult:
+        if ML_AVAILABLE and self.model is not None and self.scaler is not None:
+            return self._ml_anomaly_detection(data_point)
+        return self._statistical_anomaly_detection(data_point)
+
+    def _ml_anomaly_detection(self, data_point: List[float]) -> Dict[str, Any]:
         """ML-based anomaly detection"""
-        features_scaled = self.scaler.transform(features.reshape(1, -1))
-        
-        # Get anomaly score
-        anomaly_score = self.anomaly_detector.decision_function(features_scaled)[0]
-        is_anomaly = self.anomaly_detector.predict(features_scaled)[0] == -1
-        
-        # Calculate confidence based on distance from decision boundary
-        confidence = min(1.0, abs(anomaly_score) / 0.5)
-        
-        # Behavioral analysis if user provided
-        if user_id and self.user_profiles[user_id]["baseline_established"]:
-            behavioral_anomaly = self._detect_behavioral_anomaly(user_id, features)
-            if behavioral_anomaly:
-                is_anomaly = True
-                confidence = max(confidence, 0.8)
-        
-        return AnomalyResult(
-            is_anomaly=is_anomaly,
-            anomaly_score=float(anomaly_score),
-            confidence=confidence,
-            features=features.tolist(),
-            detection_method="ml_isolation_forest",
-            timestamp=datetime.utcnow()
-        )
-    
-    def _pattern_based_detection(self, request_data: Dict[str, Any], 
-                               features: np.ndarray) -> AnomalyResult:
-        """Pattern-based anomaly detection (fallback)"""
-        result = self.pattern_detector.detect_anomaly(request_data)
-        
-        return AnomalyResult(
-            is_anomaly=result["is_anomaly"],
-            anomaly_score=result["score"],
-            confidence=result["confidence"],
-            features=features.tolist(),
-            detection_method="pattern_based",
-            timestamp=datetime.utcnow()
-        )
-    
-    def _update_user_profile(self, user_id: str, request_data: Dict[str, Any], 
-                           features: np.ndarray):
-        """Update user behavioral profile"""
-        profile = self.user_profiles[user_id]
-        
-        # Add to history
-        profile["request_history"].append({
-            "timestamp": datetime.utcnow(),
-            "request": request_data
-        })
-        profile["feature_history"].append(features)
-        
-        # Establish baseline if enough data
-        if (len(profile["feature_history"]) >= 50 and 
-            not profile["baseline_established"]):
-            
-            feature_matrix = np.array(list(profile["feature_history"]))
-            profile["baseline_features"] = {
-                "mean": np.mean(feature_matrix, axis=0),
-                "std": np.std(feature_matrix, axis=0),
-                "min": np.min(feature_matrix, axis=0),
-                "max": np.max(feature_matrix, axis=0)
-            }
-            profile["baseline_established"] = True
-    
-    def _detect_behavioral_anomaly(self, user_id: str, 
-                                 features: np.ndarray) -> bool:
-        """Detect behavioral anomalies for a specific user"""
-        profile = self.user_profiles[user_id]
-        baseline = profile["baseline_features"]
-        
-        if not baseline:
-            return False
-        
-        # Calculate z-scores for each feature
-        z_scores = np.abs((features - baseline["mean"]) / (baseline["std"] + 1e-8))
-        
-        # Check if any feature is more than 3 standard deviations away
-        if np.any(z_scores > 3.0):
-            return True
-        
-        # Check if multiple features are moderately anomalous
-        if np.sum(z_scores > 2.0) >= 3:
-            return True
-        
-        return False
-    
-    def get_user_profile(self, user_id: str) -> Dict[str, Any]:
-        """Get user behavioral profile
-        
-        Args:
-            user_id: User ID
-            
-        Returns:
-            User profile information
-        """
-        profile = self.user_profiles[user_id]
-        
-        return {
-            "user_id": user_id,
-            "request_count": len(profile["request_history"]),
-            "baseline_established": profile["baseline_established"],
-            "last_activity": profile["request_history"][-1]["timestamp"] if profile["request_history"] else None,
-            "feature_statistics": profile["baseline_features"] if profile["baseline_established"] else None
+        X = np.array(data_point).reshape(1, -1)
+        X_scaled = self.scaler.transform(X)
+
+        raw_score = self.model.decision_function(X_scaled)[0]
+        prediction = self.model.predict(X_scaled)[0]
+
+        is_anomaly = bool(prediction == -1)
+        # Normalize score to [0, 1]
+        anomaly_score = max(0.0, min(1.0, 0.5 - raw_score))
+        confidence = min(1.0, abs(raw_score) * 2)
+
+        result = {
+            "is_anomaly": is_anomaly,
+            "anomaly_score": anomaly_score,
+            "confidence": confidence,
         }
-    
-    def get_detection_metrics(self) -> Dict[str, Any]:
-        """Get detection performance metrics"""
-        total = self.detection_metrics["total_requests"]
-        if total > 0:
-            self.detection_metrics["detection_rate"] = self.detection_metrics["anomalies_detected"] / total
-        
-        return dict(self.detection_metrics)
-    
-    def update_feedback(self, request_id: str, is_true_positive: bool):
-        """Update model with feedback on detection accuracy
-        
-        Args:
-            request_id: Request identifier
-            is_true_positive: Whether the detection was correct
-        """
-        if is_true_positive:
-            self.detection_metrics["true_positives"] += 1
+        self.detection_history.append({
+            "timestamp": datetime.utcnow(),
+            "is_anomaly": is_anomaly,
+            "score": anomaly_score,
+        })
+        return result
+
+    def _statistical_anomaly_detection(self, data_point: List[float]) -> Dict[str, Any]:
+        """Statistical (z-score) anomaly detection fallback"""
+        if len(self.baseline_data) < 2:
+            return {"is_anomaly": False, "anomaly_score": 0.0, "confidence": 0.0}
+
+        baseline_arr = np.array(self.baseline_data)
+        means = np.mean(baseline_arr, axis=0)
+        stds = np.std(baseline_arr, axis=0)
+
+        point = np.array(data_point)
+        z_scores = np.abs((point - means) / (stds + 1e-8))
+
+        max_z = float(np.max(z_scores))
+        mean_z = float(np.mean(z_scores))
+
+        # Anomaly if any z-score > 3 or mean z-score > 2
+        is_anomaly = bool(max_z > 3.0 or mean_z > 2.0)
+        anomaly_score = min(1.0, max_z / 5.0)
+        confidence = min(1.0, max_z / 3.0)
+
+        result = {
+            "is_anomaly": is_anomaly,
+            "anomaly_score": anomaly_score,
+            "confidence": confidence,
+        }
+        self.detection_history.append({
+            "timestamp": datetime.utcnow(),
+            "is_anomaly": is_anomaly,
+            "score": anomaly_score,
+        })
+        return result
+
+    def update_model_online(self, new_point: List[float]):
+        """Add new data and retrain periodically"""
+        self.add_baseline_data(new_point)
+        self._update_counter += 1
+        if self._update_counter >= self._retrain_every:
+            self._update_counter = 0
+            self.train_model()
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """Return detection statistics"""
+        total = len(self.detection_history)
+        anomaly_count = sum(1 for d in self.detection_history if d["is_anomaly"])
+        avg_score = (sum(d["score"] for d in self.detection_history) / total
+                     if total > 0 else 0.0)
+
+        return {
+            "total_detections": total,
+            "anomaly_count": anomaly_count,
+            "anomaly_rate": anomaly_count / total if total > 0 else 0.0,
+            "average_score": avg_score,
+        }
+
+
+# ---------------------------------------------------------------------------
+# AIImmuneSystem
+# ---------------------------------------------------------------------------
+
+class AIImmuneSystem:
+    """AI-based immune system integrating threat classification and anomaly detection"""
+
+    def __init__(self, config: Optional[AIImmuneConfig] = None,
+                 threshold: float = 0.7,
+                 learning_mode: bool = False):
+        if config is not None:
+            self.config = config
         else:
-            self.detection_metrics["false_positives"] += 1
-        
-        # Update accuracy
-        total_feedback = (self.detection_metrics["true_positives"] + 
-                         self.detection_metrics["false_positives"])
-        if total_feedback > 0:
-            self.detection_metrics["detection_accuracy"] = (
-                self.detection_metrics["true_positives"] / total_feedback
-            )
+            self.config = AIImmuneConfig(threshold=threshold,
+                                          learning_mode=learning_mode)
+
+        self.threat_classifier = ThreatClassifier()
+        self.anomaly_detector = AnomalyDetector(
+            threshold=self.config.threshold,
+            learning_mode=self.config.learning_mode
+        )
+
+        self.analysis_history: List[Dict[str, Any]] = []
+        self.max_history_size: int = 1000
+
+        self.performance_metrics: Dict[str, float] = {
+            "false_positive_rate": 0.0,
+            "detection_rate": 0.0,
+        }
+
+    def analyze_request(self, request: Optional[Dict[str, Any]],
+                        context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Perform comprehensive analysis of a request.
+
+        Raises AnomalyDetectionError on invalid input.
+        """
+        if request is None:
+            raise AnomalyDetectionError("Request cannot be None")
+        if context is None:
+            raise AnomalyDetectionError("Context cannot be None")
+
+        # Threat classification
+        threat_analysis = self.threat_classifier.classify_request(request)
+
+        # Feature extraction for anomaly detection
+        features = self.threat_classifier.extract_features(request)
+        feature_vector = list(features.values())
+
+        # Anomaly detection
+        anomaly_result = self.anomaly_detector.detect_anomaly(feature_vector)
+
+        # Behavioral analysis
+        user_id = context.get("user_id")
+        if user_id:
+            self.threat_classifier.update_user_behavior(user_id, request)
+            behavioral_analysis = self.threat_classifier.analyze_user_behavior(user_id)
+        else:
+            behavioral_analysis = {
+                "anomaly_score": 0.0,
+                "behavior_patterns": {},
+                "risk_level": "low",
+            }
+
+        # Compute overall risk score
+        threat_score = threat_analysis.get("threat_level", 0.0)
+        anomaly_score = anomaly_result.get("anomaly_score", 0.0)
+        behavioral_score = behavioral_analysis.get("anomaly_score", 0.0)
+
+        combined = min(1.0, (
+            threat_score * 0.6 +
+            anomaly_score * 0.25 +
+            behavioral_score * 0.15
+        ))
+        # Ensure very high threat scores dominate the overall risk
+        overall_risk_score = max(combined, threat_score * 0.85)
+
+        # Recommendation
+        if overall_risk_score >= self.config.threshold:
+            recommendation = "block"
+        elif overall_risk_score >= self.config.threshold * 0.6:
+            recommendation = "monitor"
+        else:
+            recommendation = "allow"
+
+        result = {
+            "threat_analysis": threat_analysis,
+            "anomaly_analysis": anomaly_result,
+            "behavioral_analysis": behavioral_analysis,
+            "overall_risk_score": overall_risk_score,
+            "recommendation": recommendation,
+        }
+
+        # Learning mode: add to baseline
+        if self.config.learning_mode and recommendation == "allow":
+            self.anomaly_detector.add_baseline_data(feature_vector)
+
+        # Record history
+        entry = {
+            "timestamp": datetime.utcnow(),
+            "risk_score": overall_risk_score,
+            "blocked": recommendation == "block",
+        }
+        self.analysis_history.append(entry)
+
+        # Cleanup if needed
+        if len(self.analysis_history) > self.max_history_size:
+            self._cleanup_old_data()
+
+        return result
+
+    def update_models(self):
+        """Trigger model update for both sub-components"""
+        # Always attempt training (mocks will register calls even with empty data)
+        self.anomaly_detector.train_model()
+        self.threat_classifier.train_model([])
+
+    def get_system_health(self) -> Dict[str, Any]:
+        """Return system health metrics"""
+        total = len(self.analysis_history)
+        blocked = sum(1 for e in self.analysis_history if e.get("blocked"))
+        detection_rate = blocked / total if total > 0 else 0.0
+
+        return {
+            "model_status": "healthy" if (
+                self.anomaly_detector.model is not None
+                or len(self.anomaly_detector.baseline_data) > 0
+            ) else "untrained",
+            "detection_rate": detection_rate,
+            "false_positive_rate": self.performance_metrics.get("false_positive_rate", 0.0),
+            "system_load": total,
+            "last_update": datetime.utcnow().isoformat(),
+        }
+
+    def export_model_data(self, file_path: str):
+        """Export analysis history and config to a JSON file"""
+        data = {
+            "config": {
+                "threshold": self.config.threshold,
+                "learning_mode": self.config.learning_mode,
+            },
+            "analysis_history": [
+                {**e, "timestamp": e["timestamp"].isoformat()
+                 if isinstance(e["timestamp"], datetime) else e["timestamp"]}
+                for e in self.analysis_history
+            ],
+            "export_timestamp": datetime.utcnow().isoformat(),
+        }
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+
+    def import_model_data(self, file_path: str):
+        """Import analysis history from a JSON file"""
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+
+        if "config" in data:
+            cfg = data["config"]
+            if "threshold" in cfg:
+                self.config.threshold = cfg["threshold"]
+            if "learning_mode" in cfg:
+                self.config.learning_mode = cfg["learning_mode"]
+
+        if "analysis_history" in data:
+            self.analysis_history.extend(data["analysis_history"])
+
+    def adjust_threshold_adaptive(self):
+        """Increase threshold when false positive rate is high"""
+        fp_rate = self.performance_metrics.get("false_positive_rate", 0.0)
+        if fp_rate > 0.2:
+            self.config.threshold = min(0.99, self.config.threshold + 0.05)
+
+    def _cleanup_old_data(self):
+        """Keep only the most recent max_history_size entries"""
+        if len(self.analysis_history) > self.max_history_size:
+            self.analysis_history = self.analysis_history[-self.max_history_size:]
+
+
+# ---------------------------------------------------------------------------
+# Legacy compatibility shims
+# ---------------------------------------------------------------------------
+
+class FeatureExtractor:
+    """Extracts features from MCP requests for ML analysis (legacy compat)"""
+
+    def extract_features(self, request_data: Dict[str, Any]) -> np.ndarray:
+        request_str = json.dumps(request_data)
+        params = request_data.get("params", {})
+        method = request_data.get("method", "")
+
+        features = [
+            len(request_str),
+            len(params) if isinstance(params, dict) else 0,
+            len(method),
+            _calculate_entropy(request_str),
+            _special_char_ratio(request_str),
+            _calculate_nesting_depth(request_data),
+            _METHOD_RISK.get(method, 0.2),
+        ]
+        return np.array(features, dtype=float)
 
 
 class PatternBasedDetector:
-    """Pattern-based anomaly detection (fallback when ML is not available)"""
-    
+    """Pattern-based anomaly detection (legacy compat)"""
+
     def __init__(self):
         self.suspicious_patterns = [
-            r'[;&|`$()]',  # Shell metacharacters
-            r'\b(rm|del|format|shutdown)\b',  # Dangerous commands
-            r'\.\.[\/\\]',  # Path traversal
-            r'(union|select|insert|update|delete)\s+',  # SQL injection
-            r'<script[^>]*>.*?</script>',  # XSS
-            r'javascript:',  # JavaScript injection
-            r'\b(eval|exec|system)\s*\(',  # Code execution
+            r'[;&|`$()]',
+            r'\b(rm|del|format|shutdown)\b',
+            r'\.\.[/\\]',
+            r'(union|select|insert|update|delete)\s+',
+            r'<script[^>]*>.*?</script>',
+            r'javascript:',
+            r'\b(eval|exec|system)\s*\(',
         ]
-        
-        self.normal_patterns = set()
-        self.request_sizes = []
-        self.parameter_counts = []
-    
-    def train(self, normal_requests: List[Dict[str, Any]]):
-        """Train on normal request patterns"""
-        for request in normal_requests:
-            request_str = json.dumps(request)
-            self.normal_patterns.add(hashlib.md5(request_str.encode()).hexdigest())
-            self.request_sizes.append(len(request_str))
-            self.parameter_counts.append(len(request.get("params", {})))
-    
+
     def detect_anomaly(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Detect anomalies using pattern matching"""
         request_str = json.dumps(request_data)
         score = 0.0
         indicators = []
-        
-        # Check for suspicious patterns
+
         for pattern in self.suspicious_patterns:
             if re.search(pattern, request_str, re.IGNORECASE):
                 score += 0.3
                 indicators.append(f"Suspicious pattern: {pattern}")
-        
-        # Check request size anomaly
-        if self.request_sizes:
-            mean_size = statistics.mean(self.request_sizes)
-            std_size = statistics.stdev(self.request_sizes) if len(self.request_sizes) > 1 else 0
-            
-            if abs(len(request_str) - mean_size) > 3 * std_size:
-                score += 0.2
-                indicators.append("Unusual request size")
-        
-        # Check parameter count anomaly
-        param_count = len(request_data.get("params", {}))
-        if self.parameter_counts:
-            mean_params = statistics.mean(self.parameter_counts)
-            std_params = statistics.stdev(self.parameter_counts) if len(self.parameter_counts) > 1 else 0
-            
-            if abs(param_count - mean_params) > 3 * std_params:
-                score += 0.2
-                indicators.append("Unusual parameter count")
-        
-        # Check if request is completely new
-        request_hash = hashlib.md5(request_str.encode()).hexdigest()
-        if request_hash not in self.normal_patterns:
-            score += 0.1
-        
+
         is_anomaly = score > 0.5
         confidence = min(1.0, score)
-        
+
         return {
             "is_anomaly": is_anomaly,
             "score": score,
             "confidence": confidence,
-            "indicators": indicators
+            "indicators": indicators,
         }
-
-
-class ThreatClassifier:
-    """Classifies detected anomalies into threat categories"""
-    
-    def __init__(self):
-        self.threat_categories = {
-            "command_injection": {
-                "patterns": [r'[;&|`$()]', r'\b(rm|del|format|shutdown)\b'],
-                "severity": "HIGH",
-                "description": "Command injection attempt detected",
-                "mitigation": ["Block request", "Review input validation", "Check system logs"]
-            },
-            "sql_injection": {
-                "patterns": [r'(union|select|insert|update|delete)\s+', r"'\s*or\s*'1'\s*=\s*'1"],
-                "severity": "HIGH",
-                "description": "SQL injection attempt detected",
-                "mitigation": ["Block request", "Review database queries", "Use parameterized queries"]
-            },
-            "xss_attack": {
-                "patterns": [r'<script[^>]*>.*?</script>', r'javascript:', r'on\w+\s*='],
-                "severity": "MEDIUM",
-                "description": "Cross-site scripting attempt detected",
-                "mitigation": ["Block request", "Sanitize input", "Implement CSP headers"]
-            },
-            "path_traversal": {
-                "patterns": [r'\.\.[\/\\]', r'%2e%2e%2f', r'%2e%2e\\'],
-                "severity": "HIGH",
-                "description": "Path traversal attempt detected",
-                "mitigation": ["Block request", "Validate file paths", "Use chroot jail"]
-            },
-            "code_execution": {
-                "patterns": [r'\b(eval|exec|system|shell_exec)\s*\('],
-                "severity": "CRITICAL",
-                "description": "Code execution attempt detected",
-                "mitigation": ["Block request immediately", "Isolate system", "Investigate breach"]
-            },
-            "data_exfiltration": {
-                "patterns": [r'cat.*passwd', r'dump.*database', r'export.*data'],
-                "severity": "CRITICAL",
-                "description": "Data exfiltration attempt detected",
-                "mitigation": ["Block request", "Monitor data access", "Review permissions"]
-            },
-            "privilege_escalation": {
-                "patterns": [r'\b(sudo|su|admin|root)\b', r'privilege.*escalat'],
-                "severity": "HIGH",
-                "description": "Privilege escalation attempt detected",
-                "mitigation": ["Block request", "Review user permissions", "Audit system access"]
-            }
-        }
-    
-    def classify_threat(self, request_data: Dict[str, Any], 
-                      anomaly_result: AnomalyResult) -> ThreatInfo:
-        """Classify the type of threat detected
-        
-        Args:
-            request_data: Original request data
-            anomaly_result: Anomaly detection result
-            
-        Returns:
-            ThreatInfo with classification details
-        """
-        if not anomaly_result.is_anomaly:
-            return ThreatInfo(
-                threat_type="none",
-                severity="LOW",
-                confidence=0.0,
-                indicators=[],
-                mitigation_suggestions=[]
-            )
-        
-        request_text = json.dumps(request_data).lower()
-        detected_threats = []
-        all_indicators = []
-        
-        # Check each threat category
-        for threat_type, config in self.threat_categories.items():
-            indicators = []
-            for pattern in config["patterns"]:
-                if re.search(pattern, request_text, re.IGNORECASE):
-                    indicators.append(f"Pattern match: {pattern}")
-            
-            if indicators:
-                detected_threats.append({
-                    "type": threat_type,
-                    "severity": config["severity"],
-                    "description": config["description"],
-                    "indicators": indicators,
-                    "mitigation": config["mitigation"]
-                })
-                all_indicators.extend(indicators)
-        
-        if detected_threats:
-            # Return highest severity threat
-            severity_order = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
-            highest_threat = max(detected_threats, 
-                               key=lambda x: severity_order[x["severity"]])
-            
-            return ThreatInfo(
-                threat_type=highest_threat["type"],
-                severity=highest_threat["severity"],
-                confidence=min(1.0, anomaly_result.confidence + 0.2),
-                indicators=all_indicators,
-                mitigation_suggestions=highest_threat["mitigation"]
-            )
-        
-        # Unknown anomaly
-        return ThreatInfo(
-            threat_type="unknown_anomaly",
-            severity="MEDIUM",
-            confidence=anomaly_result.confidence,
-            indicators=[f"Anomaly score: {anomaly_result.anomaly_score:.3f}"],
-            mitigation_suggestions=[
-                "Monitor request patterns",
-                "Review request details",
-                "Consider additional validation"
-            ]
-        )

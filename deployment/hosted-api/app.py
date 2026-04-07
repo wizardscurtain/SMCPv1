@@ -25,9 +25,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Try different possible paths for the smcp_security module
 possible_paths = [
-    '/opt/render/project/src/code',  # Render deployment path
-    '/app/code',  # Local development path
-    os.path.join(current_dir, '../../code'),  # Relative path from hosted-api
+    '/opt/render/project/src/libraries/python',  # Render deployment path
+    '/app/libraries/python',  # Local development path
+    os.path.join(current_dir, '../../libraries/python'),  # Relative path from hosted-api
     os.path.join(current_dir, 'smcp_security'),  # If copied to same directory
     './smcp_security'  # Current directory
 ]

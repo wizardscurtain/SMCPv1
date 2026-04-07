@@ -1,25 +1,28 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.poetry]
+[project]
 name = "smcp-security"
 version = "1.0.0"
-description = "Secure Model Context Protocol (SMCP) v1 - Production-ready security framework for MCP implementations"
-authors = ["SMCP Security Team <security@smcp.dev>"]
-license = "MIT"
+description = "Secure Model Context Protocol (SMCP) v1 — Production-ready security framework for MCP implementations"
 readme = "README.md"
-homepage = "https://github.com/wizardscurtain/SMCPv1"
-repository = "https://github.com/wizardscurtain/SMCPv1"
-documentation = "https://smcp-security.readthedocs.io"
-keywords = ["security", "mcp", "ai", "protocol", "authentication", "authorization", "validation"]
+license = { text = "MIT" }
+authors = [
+    { name = "Cecil Jentges", email = "cecil.jentges@gmail.com" }
+]
+requires-python = ">=3.9"
+keywords = [
+    "security", "mcp", "model-context-protocol", "ai", "authentication",
+    "authorization", "validation", "middleware", "threat-detection",
+    "ai-security", "cybersecurity", "cnsa", "zero-trust"
+]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -27,97 +30,109 @@ classifiers = [
     "Topic :: Security",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
-    "Topic :: System :: Systems Administration :: Authentication/Directory"
+    "Topic :: System :: Systems Administration :: Authentication/Directory",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Framework :: AsyncIO",
+    "Typing :: Typed",
 ]
-packages = [{include = "smcp_security"}]
+dependencies = [
+    "cryptography>=41.0.0",
+    "PyJWT>=2.8.0",
+    "argon2-cffi>=23.1.0",
+    "bcrypt>=4.1.0",
+    "pyotp>=2.9.0",
+    "jsonschema>=4.20.0",
+    "python-dateutil>=2.8.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-# Core dependencies
-fastapi = {version = ">=0.104.0", optional = true}
-uvicorn = {version = ">=0.24.0", optional = true}
-pydantic = ">=2.0.0"
-python-multipart = {version = ">=0.0.6", optional = true}
+[project.optional-dependencies]
+fastapi = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.0",
+]
+ml = [
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+]
+qr = [
+    "qrcode>=7.4.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-benchmark>=4.0.0",
+    "faker>=20.0.0",
+    "black>=23.10.0",
+    "isort>=5.12.0",
+    "mypy>=1.7.0",
+    "bandit>=1.7.5",
+]
+all = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.0",
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "joblib>=1.3.0",
+    "qrcode>=7.4.0",
+]
 
-# Security dependencies
-cryptography = ">=41.0.0"
-PyJWT = ">=2.8.0"
-argon2-cffi = ">=23.1.0"
-bcrypt = ">=4.1.0"
+[project.urls]
+Homepage    = "https://github.com/wizardscurtain/SMCPv1"
+Repository  = "https://github.com/wizardscurtain/SMCPv1"
+"Bug Tracker" = "https://github.com/wizardscurtain/SMCPv1/issues"
 
-# Authentication
-pyotp = ">=2.9.0"
-qrcode = {version = ">=7.4.0", optional = true}
-
-# Machine Learning (optional)
-scikit-learn = {version = ">=1.3.0", optional = true}
-numpy = {version = ">=1.24.0", optional = true}
-scipy = {version = ">=1.11.0", optional = true}
-joblib = {version = ">=1.3.0", optional = true}
-
-# Data validation
-jsonschema = ">=4.20.0"
-
-# Utilities
-requests = ">=2.31.0"
-aiofiles = {version = ">=23.2.0", optional = true}
-python-dateutil = ">=2.8.0"
-
-[tool.poetry.group.dev.dependencies]
-# Testing
-pytest = ">=7.4.0"
-pytest-asyncio = ">=0.21.0"
-pytest-cov = ">=4.1.0"
-pytest-mock = ">=3.11.0"
-httpx = ">=0.25.0"
-responses = ">=0.23.0"
-
-# Code quality
-black = ">=23.10.0"
-flake8 = ">=6.1.0"
-mypy = ">=1.7.0"
-isort = ">=5.12.0"
-
-# Security testing
-bandit = ">=1.7.5"
-safety = ">=2.3.0"
-
-# Documentation
-mkdocs = ">=1.5.0"
-mkdocs-material = ">=9.4.0"
-
-[tool.poetry.extras]
-fastapi = ["fastapi", "uvicorn", "python-multipart", "aiofiles"]
-ml = ["scikit-learn", "numpy", "scipy", "joblib"]
-qr = ["qrcode"]
-all = ["fastapi", "uvicorn", "python-multipart", "aiofiles", "scikit-learn", "numpy", "scipy", "joblib", "qrcode"]
-
-[tool.poetry.scripts]
+[project.scripts]
 smcp-security = "smcp_security.cli:main"
 
-[tool.black]
-line-length = 88
-target-version = ['py38']
+# ---------------------------------------------------------------------------
+# Setuptools
+# ---------------------------------------------------------------------------
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["smcp_security*"]
 
-[tool.isort]
-profile = "black"
-line_length = 88
+[tool.setuptools.package-data]
+smcp_security = ["py.typed"]
 
-[tool.mypy]
-python_version = "3.8"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-
+# ---------------------------------------------------------------------------
+# Testing
+# ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = [
+testpaths    = ["tests"]
+asyncio_mode = "auto"
+addopts      = [
     "--verbose",
     "--cov=smcp_security",
     "--cov-report=html",
-    "--cov-report=term-missing"
+    "--cov-report=term-missing",
 ]
 
 [tool.coverage.run]
 source = ["smcp_security"]
-omit = ["*/tests/*", "*/test_*"]
+omit   = ["*/tests/*", "*/test_*"]
+
+# ---------------------------------------------------------------------------
+# Code quality
+# ---------------------------------------------------------------------------
+[tool.black]
+line-length    = 88
+target-version = ["py39"]
+
+[tool.isort]
+profile     = "black"
+line_length = 88
+
+[tool.mypy]
+python_version      = "3.9"
+warn_return_any     = true
+warn_unused_configs = true
+disallow_untyped_defs = true

@@ -11,7 +11,7 @@ __email__ = "contact@example.org"
 
 from .core import SMCPSecurityFramework, SecurityConfig
 from .input_validation import InputValidator, CommandInjectionPrevention
-from .authentication import JWTAuthenticator, MFAManager
+from .authentication import JWTAuthenticator, MFAManager, TLSConfig
 from .authorization import RBACManager
 from .rate_limiting import AdaptiveRateLimiter, DoSProtection
 from .cryptography import SMCPCrypto, Argon2KeyDerivation
@@ -25,6 +25,7 @@ __all__ = [
     'CommandInjectionPrevention', 
     'JWTAuthenticator',
     'MFAManager',
+    'TLSConfig',
     'RBACManager',
     'AdaptiveRateLimiter',
     'DoSProtection',
