@@ -1,23 +1,40 @@
-# SMCPv1 - Secure Model Context Protocol
+# SMCPv1 — Secure Model Context Protocol (Python reference implementation)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/pypi/v/smcp-security.svg)](https://pypi.org/project/smcp-security/)
-[![Node.js](https://img.shields.io/npm/v/smcp-security.svg)](https://www.npmjs.com/package/smcp-security)
-[![Go](https://img.shields.io/github/v/tag/wizardscurtain/SMCPv1?label=go%20module)](https://pkg.go.dev/github.com/wizardscurtain/SMCPv1/libraries/go)
-[![Rust](https://img.shields.io/crates/v/smcp-security.svg)](https://crates.io/crates/smcp-security)
-[![Java](https://img.shields.io/maven-central/v/com.smcp/smcp-security.svg)](https://search.maven.org/artifact/com.smcp/smcp-security)
-[![C#](https://img.shields.io/nuget/v/SMCP.Security.svg)](https://www.nuget.org/packages/SMCP.Security/)
-[![VS Code](https://img.shields.io/visual-studio-marketplace/v/smcp-security.smcp-security.svg)](https://marketplace.visualstudio.com/items?itemName=smcp-security.smcp-security)
+[![npm](https://img.shields.io/npm/v/smcp-security.svg)](https://www.npmjs.com/package/smcp-security)
 
-A comprehensive, production-ready security framework for Model Context Protocol (MCP) implementations. SMCPv1 provides multi-layered security, AI-immune threat detection, and seamless integration across multiple programming languages.
+A Python security middleware for Model Context Protocol (MCP) implementations. Real, working, ~15K LOC at `libraries/python/smcp_security/`. Uses standard primitives (`cryptography`, `PyJWT`, `argon2-cffi`, `pyotp`) — no homemade crypto.
 
-## Quick Start
+> **2026-05-12 — P0.4 honesty pass.** Earlier versions of this README claimed publication in 7 ecosystems, six-language parity, SOC 2 / ISO 27001 / GDPR / HIPAA / PCI DSS compliance, and 10,000+ req/s throughput. None of those claims survive a direct inspection of the code. This README is now scoped to what actually exists in this repo. The aspirational marketing copy is preserved in git history (commit before this one) for anyone who needs to reference it.
 
-### Choose Your Language
+## What's in this repo
 
-#### Python
+| Path | Status | Notes |
+|---|---|---|
+| `libraries/python/smcp_security/` | **Real** | ~15K LOC. The reference implementation. Real tests, real crypto. The thing you can actually use. |
+| `code/` | **Real (duplicate)** | An older copy of the Python implementation. The two have drifted slightly; `libraries/python/` is canonical going forward. Reconciliation is a future task. |
+| `experiments/{csharp,go,java,nodejs,rust,vscode-extension}/` | **Incomplete** | Facade ports referencing modules that don't exist. See [`experiments/STATUS.md`](experiments/STATUS.md). Do NOT use. |
+| `paper/SMCP_v1_Academic_Paper.md` | **Draft** | Academic paper. ArXiv ID is a placeholder (`2025.XXXXX`); ~12 of 20 references lack DOI/page numbers; perf tables are not reproducible from the code in this repo. Treat as a draft, not a published artifact. |
+| `deployment/`, `docs/` | **Partial** | Some real configuration; some scaffolding. Read with skepticism. |
+
+## What's actually published
+
+| Registry | Package | Status |
+|---|---|---|
+| **npm** | `smcp-security@1.0.0` | **Published.** The tarball is 46 KB and contains compiled JavaScript. Note that this JavaScript is NOT generated from the source in `experiments/nodejs/` — the npm artifact is real but its source-of-truth is not visible in this repo. |
+| PyPI | `smcp-security` | **Not published.** The Python library is real and could be published; it isn't yet. |
+| crates.io | `smcp-security` | Not published. |
+| Maven Central | `com.smcp:smcp-security` | Not published. |
+| NuGet | `SMCP.Security` | Not published. |
+| VS Code Marketplace | `smcp-security` | Not published. |
+
+If you see badges in older versions of this README linking to those registries, they 404 today.
+
+## Quick start (Python)
+
 ```bash
-pip install smcp-security
+# From a checkout of this repo (PyPI publication TBD):
+pip install -e libraries/python
 ```
 
 ```python
@@ -27,518 +44,96 @@ security = SMCPSecurityFramework()
 validated_request = security.validate_request(mcp_request)
 ```
 
-#### Node.js/TypeScript
-```bash
-npm install smcp-security
-```
+See [`libraries/python/README.md`](libraries/python/README.md) for the full Python API.
 
-```typescript
-import { SMCPSecurityFramework } from 'smcp-security';
+## What it actually does
 
-const security = new SMCPSecurityFramework();
-const validatedRequest = await security.validateRequest(mcpRequest);
-```
+The Python reference implements:
 
-#### Go
-```bash
-go get github.com/wizardscurtain/SMCPv1/libraries/go@v1.0.0
-```
+- **Input validation** (`input_validation.py`): schema check, content sanitization (regex-based), injection/path-traversal pattern detection.
+- **Authentication** (`authentication.py`): JWT via `PyJWT`. MFA via `pyotp`. Password hashing via `argon2-cffi`. No homemade crypto.
+- **Authorization** (`authorization.py`): role-based access control (RBAC) with hierarchical permission resolution.
+- **Rate limiting** (`rate_limiting.py`): in-memory token bucket. Per-user / per-IP. Configurable thresholds.
+- **AI Immune System** (`ai_immune.py`): `sklearn.IsolationForest` over 15 hand-engineered features, with a regex fallback. **Not BERT-based, not transformer-based, not deep learning.** Earlier README copy implied otherwise — it didn't. Treat as a structured anomaly heuristic, not "AI-immune."
+- **Cryptography utilities** (`cryptography.py`): AES-256-GCM wrappers via `cryptography`. **Important:** `_process_cryptography()` is a no-op in the request pipeline today. The wrappers exist; the pipeline does not call them. If you need end-to-end encryption, you'd need to wire it in yourself.
+- **Audit logging** (`audit.py`): structured JSON logging of security events.
 
-```go
-import "github.com/wizardscurtain/SMCPv1/libraries/go/smcp"
+## What it does NOT do (despite earlier README claims)
 
-security, _ := smcp.NewSecurityFramework(nil)
-validatedRequest, _ := security.ValidateRequest(ctx, request)
-```
-
-#### Rust
-```bash
-cargo add smcp-security
-```
-
-```rust
-use smcp_security::SecurityFramework;
-
-let security = SecurityFramework::new(Default::default()).await?;
-let validated_request = security.validate_request(&request).await?;
-```
-
-#### Java
-```xml
-<dependency>
-    <groupId>com.smcp</groupId>
-    <artifactId>smcp-security</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-```java
-SMCPSecurityFramework security = new SMCPSecurityFramework();
-MCPRequest validatedRequest = security.validateRequest(request);
-```
-
-#### C#
-```bash
-dotnet add package SMCP.Security
-```
-
-```csharp
-var security = new SMCPSecurityFramework();
-var validatedRequest = await security.ValidateRequestAsync(request);
-```
-
-#### VS Code Extension
-1. Open VS Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "SMCP Security"
-4. Click Install
-5. Right-click project folder → "Initialize SMCP Security"
-
-## Security Features
-
-### Multi-Layered Defense
-- **Input Validation**: Command injection, XSS, path traversal prevention
-- **Authentication**: JWT with MFA support
-- **Authorization**: Role-based access control (RBAC)
-- **Rate Limiting**: Adaptive DoS protection
-- **Encryption**: End-to-end data protection
-- **AI-Immune System**: ML-based threat detection
-- **Audit Logging**: Comprehensive security monitoring
-
-### AI-Powered Threat Detection
-- Real-time anomaly detection
-- Behavioral analysis
-- Attack pattern recognition
-- Adaptive defense mechanisms
-- Zero-day threat protection
-
-### Production-Ready Performance
-- **Minimal Overhead**: < 1ms latency impact
-- **High Throughput**: 10,000+ requests/second
-- **Memory Efficient**: < 50MB footprint
-- **Horizontally Scalable**: Cloud-native architecture
-- **Framework Agnostic**: Works with any MCP implementation
-
-## Libraries & Integration
-
-### Core Libraries
-
-| Language | Package | Installation | Documentation |
-|----------|---------|--------------|---------------|
-| **Python** | [`smcp-security`](https://pypi.org/project/smcp-security/) | `pip install smcp-security` | [📖 Docs](libraries/python/README.md) |
-| **Node.js** | [`smcp-security`](https://www.npmjs.com/package/smcp-security) | `npm install smcp-security` | [📖 Docs](libraries/nodejs/README.md) |
-| **Go** | [`github.com/wizardscurtain/SMCPv1/libraries/go`](https://pkg.go.dev/github.com/wizardscurtain/SMCPv1/libraries/go) | `go get github.com/wizardscurtain/SMCPv1/libraries/go@v1.0.0` | [📖 Docs](libraries/go/README.md) |
-| **Rust** | [`smcp-security`](https://crates.io/crates/smcp-security) | `cargo add smcp-security` | [📖 Docs](libraries/rust/README.md) |
-| **Java** | [`com.smcp:smcp-security`](https://search.maven.org/artifact/com.smcp/smcp-security) | Maven/Gradle dependency | [📖 Docs](libraries/java/README.md) |
-| **C#** | [`SMCP.Security`](https://www.nuget.org/packages/SMCP.Security/) | `dotnet add package SMCP.Security` | [📖 Docs](libraries/csharp/README.md) |
-
-### Developer Tools
-
-| Tool | Platform | Installation | Features |
-|------|----------|--------------|----------|
-| **VS Code Extension** | [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=smcp-security.smcp-security) | Search "SMCP Security" | Code snippets, config UI, testing tools, audit viewer |
-
-### Framework Support
-
-#### Python
-- ✅ FastAPI
-- ✅ Flask
-- ✅ Django
-- ✅ Starlette
-
-#### Node.js/TypeScript
-- ✅ Express
-- ✅ Fastify
-- ✅ Koa
-- ✅ NestJS
-
-#### Go
-- ✅ Gorilla Mux
-- ✅ Gin
-- ✅ Echo
-- ✅ Fiber
-
-#### Rust
-- ✅ Axum
-- ✅ Warp
-- ✅ Actix-web
-- ✅ Rocket
-
-#### Java
-- ✅ Spring Boot
-- ✅ Quarkus
-- ✅ Micronaut
-- ✅ Helidon
-
-#### C#
-- ✅ ASP.NET Core
-- ✅ Minimal APIs
-- ✅ Blazor
-- ✅ gRPC
+- **Sub-millisecond overhead.** Tests assert `< 50 ms` mean. The earlier "<1 ms" claim is unsubstantiated.
+- **10,000+ req/s throughput.** Not asserted anywhere in the test suite.
+- **SOC 2 Type II / ISO 27001 / GDPR / HIPAA / PCI DSS compliance.** No code, audit, or attestation in this repo backs these claims.
+- **End-to-end encryption** in the request pipeline. The cryptography primitives exist; the pipeline doesn't use them.
+- **Adaptive DoS protection.** `_process_dos_protection()` is similarly implemented but not wired into the request flow.
+- **Cross-language parity.** Only Python is real; see [`experiments/STATUS.md`](experiments/STATUS.md).
 
 ## Architecture
 
-```mermaid
-graph TB
-    A[MCP Request] --> B[Input Validation]
-    B --> C[AI Threat Detection]
-    C --> D[Rate Limiting]
-    D --> E[Authentication]
-    E --> F[Authorization]
-    F --> G[Request Processing]
-    G --> H[Audit Logging]
-    H --> I[MCP Response]
-    
-    J[Security Policies] --> B
-    J --> C
-    J --> D
-    J --> E
-    J --> F
-    
-    K[ML Models] --> C
-    L[User Database] --> E
-    M[Role Database] --> F
-    N[Audit Database] --> H
+```
+MCP Request
+   │
+   ▼
+┌─────────────────────────────┐
+│   Input Validation Layer    │  ← regex + schema (real)
+├─────────────────────────────┤
+│   AI Immune (IsolationForest)│ ← real, but a structured heuristic, not deep learning
+├─────────────────────────────┤
+│   Rate Limiting             │  ← in-memory token bucket (real)
+├─────────────────────────────┤
+│   Authentication (JWT/MFA)  │  ← real, standard primitives
+├─────────────────────────────┤
+│   Authorization (RBAC)      │  ← real, hierarchical
+├─────────────────────────────┤
+│   (Cryptography — wrappers  │  ← exists, but NOT called by the pipeline
+│    exist, pipeline no-op)   │     wire it in yourself if you need it
+├─────────────────────────────┤
+│   Audit Logging             │  ← real, JSON-structured
+└─────────────────────────────┘
+   │
+   ▼
+MCP Response
 ```
 
-### Security Layers
-
-1. **Input Validation Layer**
-   - Schema validation
-   - Content sanitization
-   - Injection attack prevention
-   - Path traversal protection
-
-2. **AI Threat Detection Layer**
-   - Anomaly detection
-   - Behavioral analysis
-   - Pattern recognition
-   - Risk scoring
-
-3. **Rate Limiting Layer**
-   - Per-user limits
-   - Per-IP limits
-   - Adaptive thresholds
-   - DoS protection
-
-4. **Authentication Layer**
-   - JWT token validation
-   - Multi-factor authentication
-   - Session management
-   - Token refresh
-
-5. **Authorization Layer**
-   - Role-based access control
-   - Permission validation
-   - Resource-level security
-   - Dynamic policies
-
-6. **Audit Layer**
-   - Security event logging
-   - Compliance reporting
-   - Real-time monitoring
-   - Forensic analysis
-
-## Configuration
-
-### Basic Configuration
-
-```json
-{
-  "security": {
-    "enableInputValidation": true,
-    "validationStrictness": "maximum",
-    "enableMFA": true,
-    "enableRBAC": true,
-    "enableRateLimiting": true,
-    "defaultRateLimit": 100,
-    "enableAIImmune": true,
-    "anomalyThreshold": 0.8,
-    "enableAuditLogging": true
-  }
-}
-```
-
-### Advanced Configuration
-
-```json
-{
-  "security": {
-    "inputValidation": {
-      "strictness": "maximum",
-      "maxRequestSize": "1MB",
-      "allowedMethods": ["tools/list", "tools/call"],
-      "blockedPatterns": ["../", "<script>", "DROP TABLE"]
-    },
-    "authentication": {
-      "jwtSecret": "${JWT_SECRET}",
-      "expirySeconds": 3600,
-      "mfa": {
-        "enabled": true,
-        "issuer": "SMCP Security",
-        "algorithm": "SHA1"
-      }
-    },
-    "authorization": {
-      "rbac": {
-        "enabled": true,
-        "defaultRole": "user",
-        "roles": {
-          "admin": ["*"],
-          "user": ["tools:list", "tools:call"],
-          "readonly": ["tools:list"]
-        }
-      }
-    },
-    "rateLimiting": {
-      "global": 1000,
-      "perUser": 100,
-      "perIP": 200,
-      "windowMs": 60000,
-      "adaptive": true
-    },
-    "aiImmune": {
-      "enabled": true,
-      "anomalyThreshold": 0.8,
-      "learningMode": false,
-      "models": ["anomaly_detection", "threat_classification"]
-    },
-    "audit": {
-      "enabled": true,
-      "logLevel": "INFO",
-      "destinations": ["file", "database", "siem"],
-      "retention": "90d"
-    }
-  }
-}
-```
-
-## Monitoring & Analytics
-
-### Security Metrics
-
-```python
-metrics = security.get_security_metrics()
-print(f"Total requests: {metrics.total_requests}")
-print(f"Blocked requests: {metrics.blocked_requests}")
-print(f"Threats detected: {metrics.threats_detected}")
-print(f"Average response time: {metrics.average_response_time}ms")
-```
-
-### Real-time Monitoring
-
-- **Security Dashboard**: Real-time threat visualization
-- **Alert System**: Immediate notification of security events
-- **Compliance Reports**: Automated compliance reporting
-- **Performance Metrics**: Security overhead monitoring
-
-### Integration with Monitoring Systems
-
-- **Prometheus**: Metrics export
-- **Grafana**: Dashboard visualization
-- **ELK Stack**: Log aggregation and analysis
-- **Splunk**: SIEM integration
-- **DataDog**: APM integration
-
-## Testing & Validation
-
-### Security Testing
+## Tests
 
 ```bash
-# Run security test suite
-python -m pytest tests/security/ -v
-
-# Run penetration tests
-python -m smcp_security.testing.pentest
-
-# Run compliance tests
-python -m smcp_security.testing.compliance
+cd libraries/python
+python -m pytest tests/ -v
 ```
 
-### Performance Testing
+Roughly 9,000 LOC of tests across unit + integration + fixtures. Real coverage of the components described above. The only enforced performance threshold is `< 50 ms` mean per request — not the README's older "<1 ms" claim.
 
-```bash
-# Benchmark security overhead
-python -m smcp_security.testing.benchmark
+## What this repo is good for
 
-# Load testing
-python -m smcp_security.testing.load_test --requests 10000 --concurrent 100
-```
+- A reference Python middleware that you can read, fork, and extend.
+- A starting point for SMCP-style request validation in MCP server implementations.
+- A working example of using `cryptography` / `PyJWT` / `argon2-cffi` / `pyotp` correctly in a security pipeline.
 
-### Vulnerability Scanning
+## What this repo is NOT good for (yet)
 
-```bash
-# Scan for known vulnerabilities
-python -m smcp_security.testing.vuln_scan
+- A drop-in production security framework you can claim compliance for. Not without your own attestation work.
+- A cross-language framework. Use only the Python implementation.
+- A research artifact. The paper is a draft. The arXiv ID is a placeholder. The performance tables in the paper are not reproducible from this repo.
 
-# Check dependencies
-python -m smcp_security.testing.dep_check
-```
+## Roadmap (honest)
 
-## Deployment
+The smallest credible next step is:
 
-### Docker
-
-```dockerfile
-FROM python:3.11-slim
-
-RUN pip install smcp-security
-
-COPY app.py .
-COPY smcp-config.json .
-
-EXPOSE 8000
-
-CMD ["python", "app.py"]
-```
-
-### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: smcp-secure-app
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: smcp-secure-app
-  template:
-    metadata:
-      labels:
-        app: smcp-secure-app
-    spec:
-      containers:
-      - name: app
-        image: your-app:latest
-        env:
-        - name: SMCP_CONFIG
-          valueFrom:
-            configMapKeyRef:
-              name: smcp-config
-              key: config.json
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: smcp-secrets
-              key: jwt-secret
-```
-
-### Cloud Platforms
-
-- **AWS**: Lambda, ECS, EKS support
-- **Google Cloud**: Cloud Run, GKE support
-- **Azure**: Container Instances, AKS support
-- **Render**: Native deployment support
-
-## Documentation
-
-### Getting Started
-- [Installation Guide](docs/installation.md)
-- [Quick Start Tutorial](docs/quickstart.md)
-- [Configuration Reference](docs/configuration.md)
-
-### Security Guides
-- [Security Best Practices](docs/security-best-practices.md)
-- [Threat Modeling](docs/threat-modeling.md)
-- [Incident Response](docs/incident-response.md)
-
-### API Documentation
-- [Python API](libraries/python/README.md)
-- [Node.js API](libraries/nodejs/README.md)
-- [Go API](libraries/go/README.md)
-- [Rust API](libraries/rust/README.md)
-- [Java API](libraries/java/README.md)
-- [C# API](libraries/csharp/README.md)
-
-### Examples
-- [Basic Usage Examples](examples/)
-- [Framework Integration](examples/frameworks/)
-- [Advanced Configurations](examples/advanced/)
-- [Production Deployments](examples/production/)
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/wizardscurtain/SMCPv1.git
-cd SMCPv1
-
-# Install development dependencies
-./scripts/setup-dev.sh
-
-# Run tests
-./scripts/test-all.sh
-
-# Build all libraries
-./scripts/build-all.sh
-```
-
-### Publishing Libraries
-
-```bash
-# Publish all libraries
-./scripts/publish-all.sh
-
-# Publish specific library
-./scripts/publish-python.sh
-./scripts/publish-nodejs.sh
-./scripts/publish-go.sh
-./scripts/publish-rust.sh
-./scripts/publish-java.sh
-./scripts/publish-csharp.sh
-./scripts/publish-vscode.sh
-```
-
-## Security
-
-### Reporting Security Issues
-
-For security issues, please email **security@smcp.dev** instead of using the issue tracker.
-
-### Security Advisories
-
-- [Security Policy](SECURITY.md)
-- [Vulnerability Disclosure](docs/vulnerability-disclosure.md)
-- [Security Advisories](https://github.com/wizardscurtain/SMCPv1/security/advisories)
-
-### Compliance
-
-- **SOC 2 Type II**: Compliant
-- **ISO 27001**: Aligned
-- **GDPR**: Privacy by design
-- **HIPAA**: Healthcare ready
-- **PCI DSS**: Payment card industry compliant
+1. Wire `_process_cryptography` and `_process_dos_protection` into the request pipeline so the README's E2EE and adaptive-DoS claims become true.
+2. Publish the Python library to PyPI under the right namespace.
+3. Pick **one** language port (Rust looks closest to viable) and finish it end-to-end before claiming multi-language support.
+4. Either finish the academic paper to actual submission quality (replace placeholder arXiv ID, fill in references, run the benchmarks that produce the perf tables) or move it to `docs/draft-paper/` and stop linking to it as if it were a published artifact.
+5. Either substantiate the compliance claims (SOC 2 audit, ISO attestation, HIPAA BAA template, PCI DSS scope statement) or drop them entirely.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+[MIT License](LICENSE).
 
 ## Acknowledgments
 
-- [Model Context Protocol](https://github.com/modelcontextprotocol) team for the foundational protocol
-- Security researchers and contributors
-- Open source community for libraries and tools
-
-## Support
-
- **Email**: support@smcp.dev
- **Discussions**: [GitHub Discussions](https://github.com/wizardscurtain/SMCPv1/discussions)
- **Issues**: [GitHub Issues](https://github.com/wizardscurtain/SMCPv1/issues)
- **Documentation**: [docs.smcp.dev](https://docs.smcp.dev)
- **Website**: [smcp.dev](https://smcp.dev)
+- [Model Context Protocol](https://github.com/modelcontextprotocol) team for the foundational protocol.
+- The maintainers of `cryptography`, `PyJWT`, `argon2-cffi`, `pyotp`, and `scikit-learn`.
 
 ---
 
-<div align="center">
-
-**Made with ❤️ by the Aevom Labs Team**
-
-[⭐ Star us on GitHub](https://github.com/wizardscurtain/SMCPv1)
-
-</div>
+*Last updated: 2026-05-12 (P0.4 honesty pass per the Serendipity Labs merge plan).*
