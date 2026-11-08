@@ -267,7 +267,6 @@ class RBACManager:
         # --- Action check ---
         action_match = (
             self._matches_pattern(permission.action, required_action)
-            or self._matches_pattern(required_action, permission.action)
         )
         if not action_match:
             return False
@@ -280,13 +279,9 @@ class RBACManager:
         if perm_resource == "*":
             return True
 
-        # Permission has a specific resource restriction.
-        # If the caller did not specify a resource ("*"), an ALLOW permission
-        # with a specific resource should still grant access (it covers that
-        # resource), but a DENY permission should NOT apply to an unspecified
-        # resource request (deny is scoped only to that resource).
+        # Unspecified target must not turn a scoped grant into global access.
         if req_resource == "*":
-            return permission.effect == PermissionEffect.ALLOW
+            return False
 
         # Both sides are specific: they must match
         return self._matches_pattern(perm_resource, req_resource)
@@ -305,7 +300,7 @@ class RBACManager:
             return True
         
         # Convert wildcard pattern to regex
-        regex_pattern = pattern.replace("*", ".*")
+        regex_pattern = re.escape(pattern).replace(r"\*", ".*")
         regex_pattern = f"^{regex_pattern}$"
         
         return bool(re.match(regex_pattern, value))
@@ -321,8 +316,11 @@ class RBACManager:
         Returns:
             True if conditions are met
         """
-        if not permission.conditions or not context:
+        if not permission.conditions:
             return True
+        # Mandatory authorization attributes must be available to authorize.
+        if context is None:
+            return False
         
         for condition_type, condition_value in permission.conditions.items():
             if condition_type == "time_range":
@@ -334,7 +332,9 @@ class RBACManager:
             elif condition_type == "day_of_week":
                 if not self._check_day_of_week(condition_value, context):
                     return False
-            # Add more condition types as needed
+            else:
+                # Unknown conditions are not evidence that access is allowed.
+                return False
         
         return True
     
@@ -342,7 +342,7 @@ class RBACManager:
                          context: AuthorizationContext) -> bool:
         """Check if current time is within allowed range"""
         if context.time_of_day is None:
-            return True
+            return False
         
         start_hour = time_range.get("start", 0)
         end_hour = time_range.get("end", 23)
@@ -353,7 +353,7 @@ class RBACManager:
                        context: AuthorizationContext) -> bool:
         """Check if IP address is in allowed ranges"""
         if not context.ip_address:
-            return True
+            return False
         
         # Simplified IP range checking (in production, use ipaddress module)
         for ip_range in ip_ranges:
@@ -366,7 +366,7 @@ class RBACManager:
                           context: AuthorizationContext) -> bool:
         """Check if current day is allowed"""
         if context.day_of_week is None:
-            return True
+            return False
         
         return context.day_of_week in allowed_days
     
