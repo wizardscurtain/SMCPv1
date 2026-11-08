@@ -1,0 +1,36 @@
+name: Prebug v0.2 SMCP security probes
+
+on:
+  push:
+    branches:
+      - hardening/prebug-v02-audit-20261107
+    paths:
+      - "libraries/python/**"
+      - ".github/workflows/prebug-v02-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Python 3.12 security regression observations
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: libraries/python
+    steps:
+      - name: Checkout read-only branch
+        uses: actions/checkout@v4
+      - name: Prepare Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install standalone probe dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,all]"
+      - name: Execute bounded security observations
+        run: |
+          python -m pytest -q tests/test_prebug_v02_regressions.py -o addopts= --tb=short --disable-warnings
