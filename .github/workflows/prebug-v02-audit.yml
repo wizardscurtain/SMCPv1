@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - hardening/prebug-v02-audit-20261107
+      - fix/prebug-security-invariants-20261107
     paths:
       - "libraries/python/**"
       - ".github/workflows/prebug-v02-audit.yml"
