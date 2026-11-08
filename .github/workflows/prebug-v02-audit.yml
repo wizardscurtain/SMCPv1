@@ -30,7 +30,7 @@ jobs:
       - name: Install standalone probe dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev,qr]"
+          python -m pip install -e ".[dev,all]"
       - name: Execute bounded security observations
         run: |
           python -m pytest -q tests/test_prebug_v02_regressions.py -o addopts= --tb=short --disable-warnings
