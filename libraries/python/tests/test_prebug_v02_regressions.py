@@ -4,7 +4,7 @@ Deliberately policy-bearing tests. No third-party network or live endpoints.
 import pytest
 from smcp_security.authorization import RBACManager, Role, Permission, AuthorizationContext
 from smcp_security.core import SecurityConfig, SMCPSecurityFramework
-from smcp_security.exceptions import AuthorizationError
+from smcp_security.exceptions import AuthorizationError, AuthenticationError
 
 def framework(**options):
     base = dict(enable_input_validation=False, enable_mfa=False, enable_rbac=False,
@@ -76,18 +76,45 @@ async def test_encryption_metadata_reports_actual_behavior():
     assert '_encrypted_params' not in out['request']
 
 @pytest.mark.asyncio
-async def test_hosted_api_context_works_with_security_framework():
+async def test_core_rejects_api_identity_without_signed_token():
+    # Public API keys belong at the hosted boundary. The core stays fail-closed.
     fw = framework()
     ctx = {'api_user': 'Demo User', 'api_tier': 'free', 'user_id': 'Demo User'}
-    out = await fw.process_request(mcp(), ctx)
-    assert out['request']['method'] == 'tools/list'
+    with pytest.raises(AuthenticationError):
+        await fw.process_request(mcp(), ctx)
 
-@pytest.mark.xfail(strict=True, reason='Candidate policy: unknown methods must deny')
+@pytest.mark.asyncio
+async def test_hosted_identity_is_bound_by_trusted_jwt():
+    fw = framework()
+    signed = fw.jwt_auth.generate_token('trusted-hosted-user', roles=[], mfa_verified=False)
+    out = await fw.process_request(mcp(), {'token': signed})
+    assert out['context']['user_id'] == 'trusted-hosted-user'
+
+@pytest.mark.asyncio
+async def test_token_claims_cannot_grant_server_side_role():
+    fw = framework(enable_rbac=True)
+    fw.rbac_manager.define_role('prebug-reader', ['mcp:read'])
+    signed = fw.jwt_auth.generate_token('demo', roles=['prebug-reader'], mfa_verified=True)
+    with pytest.raises(AuthorizationError):
+        await fw.process_request(mcp(), {'token': signed})
+
+def test_scoped_permission_never_grants_wildcard_target():
+    auth = RBACManager()
+    auth.define_role('scoped-reader', ['mcp:read:files'])
+    auth.assign_role('demo', 'scoped-reader')
+    assert not auth.check_permission('demo', 'mcp:read', '*')
+
+def test_unknown_permission_conditions_are_not_silently_allowed():
+    auth = RBACManager()
+    auth.roles['unknown'] = Role(name='unknown', permissions=[
+        Permission(action='mcp:read', conditions={'unsupported_condition': True})])
+    auth.assign_role('demo', 'unknown')
+    assert not auth.check_permission('demo', 'mcp:read', context=AuthorizationContext(user_id='demo'))
+
 def test_unknown_method_no_generic_read_grant():
     fw = framework()
     assert fw._determine_required_permission(mcp('unrecognized/operation')) == 'DENY'
 
-@pytest.mark.xfail(strict=True, reason='Candidate policy: named tool calls need capability-specific authorization')
 def test_named_tool_invocation_not_same_as_list():
     fw = framework()
     assert fw._determine_required_permission(mcp('tools/call', {'name': 'delete-repository'})) != 'mcp:read'
