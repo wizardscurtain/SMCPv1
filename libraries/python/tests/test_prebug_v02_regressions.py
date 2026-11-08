@@ -48,6 +48,8 @@ def test_missing_conditional_context_must_fail_closed():
 async def test_revoked_role_not_reinstalled_by_token_on_next_request():
     fw = framework(enable_rbac=True)
     fw.rbac_manager.define_role('prebug-reader', ['mcp:read'])
+    # The role is provisioned by trusted RBAC administration, not JWT claims.
+    fw.rbac_manager.assign_role('demo', 'prebug-reader')
     token = fw.jwt_auth.generate_token('demo', roles=['prebug-reader'], mfa_verified=True)
     ctx = {'token': token}
     assert (await fw.process_request(mcp(), ctx))['request']['method'] == 'tools/list'
