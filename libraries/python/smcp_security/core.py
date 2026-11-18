@@ -265,8 +265,9 @@ class SMCPSecurityFramework:
                     )
                     layers_processed.append("encryption")
                 except Exception as e:
-                    errors["crypto_manager"] = str(e)
-                    processed_request = validated_request
+                    # Do not downgrade failed cryptography into plaintext success.
+                    errors["crypto_manager"] = type(e).__name__
+                    raise
             else:
                 processed_request = validated_request
             
@@ -320,7 +321,11 @@ class SMCPSecurityFramework:
                     "threat_score": auth_context.get("threat_score", threat_score),
                     "recommendation": "allow",
                 },
-                "encryption_applied": self.config.enable_encryption,
+                "encryption_applied": bool(
+                    self.config.enable_encryption
+                    and isinstance(processed_request, dict)
+                    and "_encrypted_params" in processed_request
+                ),
             }
             if errors:
                 security_metadata["errors"] = errors
@@ -460,14 +465,8 @@ class SMCPSecurityFramework:
             required_permission = self._determine_required_permission(request_data)
             user_id = auth_payload.get("user_id")
             
-            # Auto-assign the token's declared roles in RBAC so they can be checked
-            token_roles = auth_payload.get("roles", [])
-            for role in token_roles:
-                try:
-                    self.rbac_manager.assign_role(user_id, role)
-                except Exception:
-                    pass  # Role may not be defined; continue
-            
+            # Server-managed roles are authoritative; bearer-token claims
+            # must not restore a role revoked after token issuance.
             if not self.rbac_manager.check_permission(user_id, required_permission):
                 raise AuthorizationError(
                     f"Insufficient permissions for {required_permission}"
@@ -651,7 +650,7 @@ class SMCPSecurityFramework:
         # Map MCP methods to permissions
         permission_map = {
             "tools/list": "mcp:read",
-            "tools/call": "mcp:read",  # Basic read permission, specific tool permissions checked at app level
+            "tools/call": "mcp:execute",  # Executor must enforce the named tool and resource
             "resources/list": "mcp:read",
             "resources/read": "mcp:read",
             "resources/write": "mcp:write",
@@ -660,7 +659,7 @@ class SMCPSecurityFramework:
             "system/config": "system:config",
         }
         
-        return permission_map.get(method, "mcp:read")
+        return permission_map.get(method, "DENY")
     
     def _calculate_security_level(self, auth_context: Dict[str, Any]) -> str:
         """Calculate overall security level for the request"""

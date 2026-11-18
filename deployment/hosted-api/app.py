@@ -111,27 +111,37 @@ metrics = {
 }
 
 # Simple API key validation (in production, use proper auth service)
-VALID_API_KEYS = {
-    "demo_key_123": {"name": "Demo User", "tier": "free", "rate_limit": 1000},
-    "test_key_456": {"name": "Test User", "tier": "basic", "rate_limit": 5000},
-    os.environ.get("SMCP_MASTER_KEY", "master_key_789"): {"name": "Master", "tier": "unlimited", "rate_limit": -1}
-}
+# Keys must be provisioned out of band. No demo credentials or fallback.
+# Public deployment requires a separate upstream rate-limiting gateway.
+_master_key = os.environ.get("SMCP_MASTER_KEY")
+VALID_API_KEYS = (
+    {_master_key: {"name": "Master", "tier": "unlimited", "rate_limit": -1}}
+    if _master_key else {}
+)
 
 def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
     """Verify API key from Authorization header"""
     if not credentials:
-        # Allow unauthenticated access for demo (with rate limits)
-        return {"name": "Anonymous", "tier": "demo", "rate_limit": 100}
+        raise HTTPException(
+            status_code=401, detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
     
     api_key = credentials.credentials
-    if api_key not in VALID_API_KEYS:
+    import secrets
+    matching_user = next(
+        (info for key, info in VALID_API_KEYS.items()
+         if secrets.compare_digest(api_key, key)),
+        None,
+    )
+    if matching_user is None:
         raise HTTPException(
             status_code=401,
             detail="Invalid API key",
             headers={"WWW-Authenticate": "Bearer"}
         )
     
-    return VALID_API_KEYS[api_key]
+    return matching_user
 
 def initialize_security_framework() -> SMCPSecurityFramework:
     """Initialize the security framework with configuration from environment"""
@@ -164,8 +174,8 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins
-    allow_credentials=True,
+    allow_origins=[origin for origin in os.environ.get("SMCP_CORS_ORIGINS", "").split(",") if origin],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -250,29 +260,29 @@ async def validate_request(
     try:
         # Add client IP to context
         client_ip = request.client.host
+        if validation_request.config is not None:
+            raise AuthorizationError("Per-request security overrides are prohibited")
+        if security_framework is None:
+            raise SecurityError("Security framework unavailable")
+
+        # Bind API-key identity to a trusted JWT. Do not accept caller-supplied
+        # identity, token, roles, or permissions in request.context.
+        trusted_token = security_framework.jwt_auth.generate_token(
+            user["name"], roles=[], permissions=[], mfa_verified=False
+        )
         enhanced_context = {
-            **validation_request.context,
+            "token": trusted_token,
             "client_ip": client_ip,
+            "ip_address": client_ip,
             "user_agent": request.headers.get("user-agent", "unknown"),
             "api_user": user["name"],
             "api_tier": user["tier"],
-            "user_id": user["name"]  # Use API user name as user_id
+            "user_id": user["name"],
         }
-        
-        # Override security config if provided
-        if validation_request.config:
-            # Create temporary security framework with custom config
-            custom_config = SecurityConfig(**validation_request.config)
-            temp_security = SMCPSecurityFramework(custom_config)
-            result = await temp_security.process_request(
-                validation_request.request, enhanced_context
-            )
-        else:
-            # Use global security framework
-            result = await security_framework.process_request(
-                validation_request.request, enhanced_context
-            )
-        
+        result = await security_framework.process_request(
+            validation_request.request, enhanced_context
+        )
+
         # Update metrics
         processing_time = (datetime.utcnow() - start_time).total_seconds() * 1000
         background_tasks.add_task(update_metrics, processing_time, False)
@@ -381,10 +391,7 @@ async def demo_endpoint():
                 }
             }
         },
-        "api_keys": {
-            "demo": "demo_key_123",
-            "test": "test_key_456"
-        },
+        "authentication": "A configured API key is required",
         "documentation": "/docs"
     }
 
